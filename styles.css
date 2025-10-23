@@ -75,7 +75,7 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 .hidden { display: none; }
 
 /* Loading overlay styles */
-.loading-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.45); z-index: 9999; pointer-events: auto; touch-action: none; }
+.loading-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.45); z-index: 9999; pointer-events: auto; touch-action: none; once 100% dissappear; }
 .loading-overlay .loader { background: white; padding: 18px 22px; border-radius: 8px; display:flex; gap: 12px; align-items: center; box-shadow: 0 6px 18px rgba(2,6,23,0.2); }
 .loader-text { font-weight: 600; color: #0f172a; }
 
