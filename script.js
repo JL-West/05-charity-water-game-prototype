@@ -103,6 +103,82 @@ document.addEventListener('DOMContentLoaded', () => {
     if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
   }
 
+  // -------------------------
+  // Jerrycan thematic loader
+  // -------------------------
+  const jerryLoader = document.getElementById('jerryLoader');
+  const jerryLoaderPercent = document.getElementById('jerryLoaderPercent');
+  const jerryLoaderMessage = document.getElementById('jerryLoaderMessage');
+  const jerryWater = jerryLoader ? jerryLoader.querySelector('.water') : null;
+  const jerryBox = jerryLoader ? jerryLoader.querySelector('.jerrycan-box') : null;
+
+  function _setJerryPercent(pct) {
+    if (jerryLoaderPercent) jerryLoaderPercent.textContent = Math.round(pct) + '%';
+    if (jerryWater) {
+      // scaleY from 0 -> 1
+      jerryWater.style.transform = `scaleY(${pct / 100})`;
+    }
+  }
+
+  function showJerryLoading(message = 'Loading...', durationMs = 600, taskPromise = null) {
+    if (!jerryLoader) return Promise.resolve();
+    jerryLoader.classList.remove('hidden');
+    jerryLoader.setAttribute('aria-hidden', 'false');
+    if (jerryLoaderMessage) jerryLoaderMessage.textContent = message;
+    _setJerryPercent(0);
+
+    return new Promise(resolve => {
+      const start = performance.now();
+      let rafId = null;
+      function tick(now) {
+        const t = Math.min(1, (now - start) / durationMs);
+        _setJerryPercent(t * 100);
+        if (t < 1) rafId = requestAnimationFrame(tick);
+      }
+      rafId = requestAnimationFrame(tick);
+
+      const animDone = new Promise(res => setTimeout(res, durationMs));
+      const waitFor = taskPromise ? Promise.all([animDone, taskPromise]) : animDone;
+
+      // Safety timeout
+      const safety = setTimeout(() => {
+        console.warn('Jerry loader safety timeout');
+        cleanup();
+        resolve();
+      }, durationMs + 4000);
+
+      function cleanup() {
+        if (rafId) cancelAnimationFrame(rafId);
+        // ensure full fill
+        _setJerryPercent(100);
+        // small splash effect: add .finish to the jerrycan box to trigger CSS drop animations
+        if (jerryBox) jerryBox.classList.add('finish');
+      }
+
+      waitFor.finally(() => {
+        clearTimeout(safety);
+        cleanup();
+        // show final splash for a short moment, then hide
+        setTimeout(() => {
+          if (jerryBox) jerryBox.classList.remove('finish');
+          if (jerryLoader) {
+            jerryLoader.classList.add('hidden');
+            jerryLoader.setAttribute('aria-hidden', 'true');
+          }
+          resolve();
+        }, 520);
+      });
+    });
+  }
+
+  function hideJerryLoading() {
+    if (!jerryLoader) return;
+    jerryLoader.classList.add('hidden');
+    jerryLoader.setAttribute('aria-hidden', 'true');
+    if (jerryWater) jerryWater.style.transform = 'scaleY(0)';
+    if (jerryLoaderPercent) jerryLoaderPercent.textContent = '0%';
+  }
+
   function saveState() {
     try {
       localStorage.setItem('charity-game-state', JSON.stringify(state));
@@ -271,7 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
     demoLoadBtn.addEventListener('click', () => {
       // Simulated network task (1s)
       const fakeFetch = new Promise(res => setTimeout(res, 1000));
-      showLoading('Demo loading...', 300, fakeFetch).then(() => {
+      // Use the jerrycan thematic loader (non-blocking) for demo
+      showJerryLoading('Demo loading...', 700, fakeFetch).then(() => {
         // After demo load, show the game screen
         screen1.classList.add('hidden');
         screen2.classList.remove('hidden');

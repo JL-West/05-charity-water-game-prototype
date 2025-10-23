@@ -87,7 +87,7 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 /* Jerry can styles */
 .jerrycan { width: 68px; height: 84px; display: block; }
 /* For the inline SVG, animate the water rect with transform scaleY anchored at the bottom */
-.jerrycan .water { transform-origin: 50% 100%; transform: scaleY(0); transition: transform 400ms linear; }
+.jerrycan .water { transform-origin: 50% 100%; transform-box: fill-box; transform: scaleY(0); transition: transform 400ms linear; }
 
 /* Splash droplets and final bounce */
 .jerrycan .splash { position: absolute; bottom: 68px; left: 50%; transform: translateX(-50%); display:flex; gap:6px; width: 48px; justify-content:center; pointer-events:none; }
