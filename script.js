@@ -63,26 +63,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!jerryWaterEl) return;
     // Clear any previous transition and timeouts
     jerryWaterEl.style.transition = 'none';
-    jerryWaterEl.style.height = '0%';
+    jerryWaterEl.style.transform = 'scaleY(0)';
     if (animateFill._timeout) {
       clearTimeout(animateFill._timeout);
       animateFill._timeout = null;
     }
 
-    // Force a reflow so the browser picks up the height reset
-    void jerryWaterEl.offsetWidth;
+    // Force a reflow
+    void jerryWaterEl.getBoundingClientRect();
 
-    // Use a CSS transition for a smooth and reliable fill
-    jerryWaterEl.style.transition = `height ${durationMs}ms linear`;
-    // Start the fill
-    jerryWaterEl.style.height = '100%';
+    // Apply transition and scale to 1 (100% fill)
+    jerryWaterEl.style.transition = `transform ${durationMs}ms linear`;
+    jerryWaterEl.style.transform = 'scaleY(1)';
 
-    // When transition completes, trigger the splash and call onComplete
     animateFill._timeout = setTimeout(() => {
-      // Trigger splash/bounce
       if (jerryCanEl) {
         jerryCanEl.classList.remove('finish');
-        void jerryCanEl.offsetWidth;
+        void jerryCanEl.getBoundingClientRect();
         jerryCanEl.classList.add('finish');
       }
       if (typeof animateFill._onComplete === 'function') animateFill._onComplete();
@@ -120,9 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!loadingOverlay) return;
     // quickly empty the jerrycan for next time
     if (jerryWaterEl) {
-      // use a short transition to empty nicely
-      jerryWaterEl.style.transition = 'height 200ms linear';
-      jerryWaterEl.style.height = '0%';
+      jerryWaterEl.style.transition = 'transform 200ms linear';
+      jerryWaterEl.style.transform = 'scaleY(0)';
     }
     loadingOverlay.classList.add('hidden');
     if (animateFill._timeout) {
