@@ -55,14 +55,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Functions
   const loadingOverlay = document.getElementById('loadingOverlay');
-  function showLoading(message = 'Loading...') {
+  // jerrycan fill animation controls
+  const jerryWaterEl = loadingOverlay ? loadingOverlay.querySelector('.jerrycan .water') : null;
+  let _fillAnim = null;
+  function animateFill(durationMs) {
+    if (!jerryWaterEl) return;
+    // reset
+    cancelAnimationFrame(_fillAnim);
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / durationMs);
+      const pct = Math.round(t * 100);
+      jerryWaterEl.style.height = pct + '%';
+      if (t < 1) {
+        _fillAnim = requestAnimationFrame(step);
+      }
+    }
+    _fillAnim = requestAnimationFrame(step);
+  }
+
+  function showLoading(message = 'Loading...', durationMs = 700) {
     if (!loadingOverlay) return;
     loadingOverlay.querySelector('.loader-text').textContent = message;
     loadingOverlay.classList.remove('hidden');
+    // start filling jerrycan over duration
+    if (jerryWaterEl) {
+      jerryWaterEl.style.height = '0%';
+      // Slight delay to allow CSS paint
+      setTimeout(() => animateFill(durationMs), 50);
+    }
   }
+
   function hideLoading() {
     if (!loadingOverlay) return;
+    // quickly empty the jerrycan for next time
+    if (jerryWaterEl) {
+      jerryWaterEl.style.height = '0%';
+    }
     loadingOverlay.classList.add('hidden');
+    cancelAnimationFrame(_fillAnim);
   }
 
   function saveState() {

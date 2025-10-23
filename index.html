@@ -91,7 +91,14 @@
     <!-- Loading overlay (hidden by default) -->
     <div id="loadingOverlay" class="loading-overlay hidden" role="status" aria-live="polite">
         <div class="loader">
-            <div class="spinner" aria-hidden="true"></div>
+            <!-- Yellow jerry can: visually represents water filling while loading -->
+            <div class="jerrycan" aria-hidden="true">
+                <div class="body">
+                    <div class="water" style="height:0%"></div>
+                </div>
+                <div class="cap"></div>
+                <div class="handle"></div>
+            </div>
             <div class="loader-text">Loading game...</div>
         </div>
     </div>
