@@ -61,7 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // If the jerry loader is visible, hide it to avoid double overlays
     if (jerryLoader) hideJerryLoading();
     if (!simpleLoader) return Promise.resolve();
-    simpleLoader.classList.remove('hidden');
+  simpleLoader.classList.remove('hidden');
+  // Prevent body scrolling/interaction while loader is visible
+  document.body.classList.add('no-scroll');
     simpleLoader.setAttribute('aria-hidden', 'false');
     if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
 
@@ -93,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // small delay so user sees 100%
         setTimeout(() => {
           simpleLoader.classList.add('hidden');
+          document.body.classList.remove('no-scroll');
           resolve();
         }, 220);
       });
@@ -105,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (_simpleTimeout) cancelAnimationFrame(_simpleTimeout);
     if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
     simpleLoader.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('no-scroll');
   }
 
   // -------------------------
@@ -128,7 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // If the simple loader is visible, hide it to avoid overlapping overlays
     if (simpleLoader) hideLoading();
     if (!jerryLoader) return Promise.resolve();
-    jerryLoader.classList.remove('hidden');
+  jerryLoader.classList.remove('hidden');
+  // Prevent body scrolling/interaction while jerry loader is visible
+  document.body.classList.add('no-scroll');
     jerryLoader.setAttribute('aria-hidden', 'false');
     if (jerryLoaderMessage) jerryLoaderMessage.textContent = message;
     _setJerryPercent(0);
@@ -170,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (jerryLoader) {
             jerryLoader.classList.add('hidden');
             jerryLoader.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('no-scroll');
           }
           resolve();
         }, 520);
