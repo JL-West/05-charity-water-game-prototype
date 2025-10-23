@@ -77,26 +77,39 @@ document.addEventListener('DOMContentLoaded', () => {
           // allow reflow then add class to retrigger animation
           void jerryCanEl.offsetWidth;
           jerryCanEl.classList.add('finish');
-          // remove the class after animation completes (300ms bounce + 600ms drops)
-          setTimeout(() => {
-            jerryCanEl.classList.remove('finish');
-          }, 800);
         }
+        // return completion so callers can chain actions (handled below)
+        if (typeof animateFill._onComplete === 'function') animateFill._onComplete();
       }
     }
     _fillAnim = requestAnimationFrame(step);
   }
 
+  // showLoading now returns a Promise that resolves when the fill and splash complete
   function showLoading(message = 'Loading...', durationMs = 400) {
-    if (!loadingOverlay) return;
+    if (!loadingOverlay) return Promise.resolve();
     loadingOverlay.querySelector('.loader-text').textContent = message;
     loadingOverlay.classList.remove('hidden');
-    // start filling jerrycan over duration
-    if (jerryWaterEl) {
+
+    return new Promise(resolve => {
+      if (!jerryWaterEl) {
+        resolve();
+        return;
+      }
+      // ensure empty then start animation
       jerryWaterEl.style.height = '0%';
-      // Slight delay to allow CSS paint
+      // set completion callback for animateFill
+      animateFill._onComplete = () => {
+        // Wait a bit for the splash animation to play (matches CSS timing ~800ms)
+        setTimeout(() => {
+          // clear splash class after it's played and then resolve
+          if (jerryCanEl) jerryCanEl.classList.remove('finish');
+          resolve();
+        }, 800);
+      };
+      // Slight delay so paint occurs before starting the frame loop
       setTimeout(() => animateFill(durationMs), 50);
-    }
+    });
   }
 
   function hideLoading() {
@@ -258,10 +271,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   loadBtn.addEventListener('click', () => {
-    // Show loading overlay while we restore saved state
-    showLoading('Loading saved game...');
-    setTimeout(() => {
-      // Simulate a short load delay for UX
+    // Show loading overlay and wait for the fill+finish to complete before hiding
+    showLoading('Loading saved game...', 400).then(() => {
       screen1.classList.add('hidden');
       screen2.classList.remove('hidden');
       renderShop();
@@ -270,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateHUD();
       statusTextEl.textContent = 'Loaded saved game state.';
       hideLoading();
-    }, 400);
+    });
   });
 
   backBtn.addEventListener('click', () => {
@@ -291,8 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // If the user previously had screen2 open (persisted), show it directly
   if (state.placedItems && state.placedItems.length > 0) {
     // Show loading overlay while restoring
-    showLoading('Restoring saved game...');
-    setTimeout(() => {
+    showLoading('Restoring saved game...', 400).then(() => {
       // Start in screen2 so players return to their placed items quickly
       screen1.classList.add('hidden');
       screen2.classList.remove('hidden');
@@ -301,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateInventory();
       updateHUD();
       hideLoading();
-    }, 400);
+    });
   }
 });
 // Log a message to the console to ensure the script is linked correctly
