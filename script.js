@@ -54,6 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalTiles = MAP_COLS * MAP_ROWS;
 
   // --- Functions
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  function showLoading(message = 'Loading...') {
+    if (!loadingOverlay) return;
+    loadingOverlay.querySelector('.loader-text').textContent = message;
+    loadingOverlay.classList.remove('hidden');
+  }
+  function hideLoading() {
+    if (!loadingOverlay) return;
+    loadingOverlay.classList.add('hidden');
+  }
+
   function saveState() {
     try {
       localStorage.setItem('charity-game-state', JSON.stringify(state));
@@ -203,14 +214,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   loadBtn.addEventListener('click', () => {
-    // Load saved state and go to screen2
-    screen1.classList.add('hidden');
-    screen2.classList.remove('hidden');
-    renderShop();
-    renderMap();
-    updateInventory();
-    updateHUD();
-    statusTextEl.textContent = 'Loaded saved game state.';
+    // Show loading overlay while we restore saved state
+    showLoading('Loading saved game...');
+    setTimeout(() => {
+      // Simulate a short load delay for UX
+      screen1.classList.add('hidden');
+      screen2.classList.remove('hidden');
+      renderShop();
+      renderMap();
+      updateInventory();
+      updateHUD();
+      statusTextEl.textContent = 'Loaded saved game state.';
+      hideLoading();
+    }, 700);
   });
 
   backBtn.addEventListener('click', () => {
@@ -230,13 +246,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // If the user previously had screen2 open (persisted), show it directly
   if (state.placedItems && state.placedItems.length > 0) {
-    // Start in screen2 so players return to their placed items quickly
-    screen1.classList.add('hidden');
-    screen2.classList.remove('hidden');
-    renderShop();
-    renderMap();
-    updateInventory();
-    updateHUD();
+    // Show loading overlay while restoring
+    showLoading('Restoring saved game...');
+    setTimeout(() => {
+      // Start in screen2 so players return to their placed items quickly
+      screen1.classList.add('hidden');
+      screen2.classList.remove('hidden');
+      renderShop();
+      renderMap();
+      updateInventory();
+      updateHUD();
+      hideLoading();
+    }, 600);
   }
 });
 // Log a message to the console to ensure the script is linked correctly
