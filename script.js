@@ -53,9 +53,55 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAP_ROWS = 4;
   const totalTiles = MAP_COLS * MAP_ROWS;
 
-  // Loading overlay and animations removed. Provide no-op helpers so calls remain safe.
-  function showLoading() { return Promise.resolve(); }
-  function hideLoading() { /* no-op */ }
+  // Simple loader implementation using the small overlay added to index.html
+  const simpleLoader = document.getElementById('simpleLoader');
+  const simpleLoaderPercent = document.getElementById('simpleLoaderPercent');
+  let _simpleTimeout = null;
+  function showLoading(message = 'Loading...', durationMs = 400, taskPromise = null) {
+    if (!simpleLoader) return Promise.resolve();
+    simpleLoader.classList.remove('hidden');
+    if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
+
+    return new Promise(resolve => {
+      const start = performance.now();
+      function step(now) {
+        const t = Math.min(1, (now - start) / durationMs);
+        const pct = Math.round(t * 100);
+        if (simpleLoaderPercent) simpleLoaderPercent.textContent = pct + '%';
+        if (t < 1) {
+          _simpleTimeout = requestAnimationFrame(step);
+        }
+      }
+      _simpleTimeout = requestAnimationFrame(step);
+
+      // Wait for both the animation and optional task to finish
+      const animDone = new Promise(res => setTimeout(res, durationMs));
+      const waitFor = taskPromise ? Promise.all([animDone, taskPromise]) : animDone;
+      // Safety timeout so it never hangs
+      const safety = setTimeout(() => {
+        console.warn('Simple loader safety timeout');
+        resolve();
+      }, durationMs + 3000);
+
+      waitFor.finally(() => {
+        clearTimeout(safety);
+        if (_simpleTimeout) cancelAnimationFrame(_simpleTimeout);
+        if (simpleLoaderPercent) simpleLoaderPercent.textContent = '100%';
+        // small delay so user sees 100%
+        setTimeout(() => {
+          simpleLoader.classList.add('hidden');
+          resolve();
+        }, 220);
+      });
+    });
+  }
+
+  function hideLoading() {
+    if (!simpleLoader) return;
+    simpleLoader.classList.add('hidden');
+    if (_simpleTimeout) cancelAnimationFrame(_simpleTimeout);
+    if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
+  }
 
   function saveState() {
     try {
