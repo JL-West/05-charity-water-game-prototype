@@ -48,6 +48,9 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 .intro-actions { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }
 .small { color: #6b7280; font-size: 0.9rem; margin-top: 8px; }
 
+.wireframe-preview { display:flex; align-items:center; justify-content:center; }
+.wireframe-preview img, .wireframe-preview .wireframe-placeholder { max-width:100%; height:auto; }
+
 /* Map grid */
 .map-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 8px; }
 .map-tile { background: #e6eef6; padding: 18px; border-radius: 6px; text-align: center; cursor: pointer; user-select: none; height: 70px; display:flex; align-items:center; justify-content:center; flex-direction:column; }
