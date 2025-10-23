@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // jerrycan fill animation controls
   const jerryWaterEl = loadingOverlay ? loadingOverlay.querySelector('.jerrycan .water') : null;
   const jerryCanEl = loadingOverlay ? loadingOverlay.querySelector('.jerrycan') : null;
+  const loaderPercentEl = loadingOverlay ? document.getElementById('loaderPercent') : null;
   let _fillAnim = null;
   function animateFill(durationMs) {
     if (!jerryWaterEl) return;
@@ -87,29 +88,82 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // showLoading now returns a Promise that resolves when the fill and splash complete
-  function showLoading(message = 'Loading...', durationMs = 400) {
+  function showLoading(message = 'Loading...', durationMs = 400, taskPromise = null) {
+    // Returns a Promise that resolves when animation + optional task complete.
     if (!loadingOverlay) return Promise.resolve();
     loadingOverlay.querySelector('.loader-text').textContent = message;
     loadingOverlay.classList.remove('hidden');
 
+    // Install ESC handler so user can dismiss if necessary
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        hideLoading();
+      }
+    }
+    document.addEventListener('keydown', onKey);
+
     return new Promise(resolve => {
       if (!jerryWaterEl) {
-        resolve();
+        // still wait for taskPromise if provided
+        if (taskPromise) {
+          taskPromise.finally(() => {
+            document.removeEventListener('keydown', onKey);
+            resolve();
+          });
+        } else {
+          document.removeEventListener('keydown', onKey);
+          resolve();
+        }
         return;
       }
-      // ensure empty then start animation
-      jerryWaterEl.style.height = '0%';
-      // set completion callback for animateFill
+
+      // progress updater using requestAnimationFrame
+      let rafId = null;
+      const startTime = performance.now();
+      function updatePercent(now) {
+        const elapsed = now - startTime;
+        const pct = Math.min(100, Math.round((elapsed / durationMs) * 100));
+        if (loaderPercentEl) loaderPercentEl.textContent = pct + '%';
+        if (pct < 100) rafId = requestAnimationFrame(updatePercent);
+      }
+
+      // animation completion promise
+      let animResolve;
+      const animPromise = new Promise(res => { animResolve = res; });
       animateFill._onComplete = () => {
-        // Wait a bit for the splash animation to play (matches CSS timing ~800ms)
+        // let the splash play, then resolve animPromise
         setTimeout(() => {
-          // clear splash class after it's played and then resolve
           if (jerryCanEl) jerryCanEl.classList.remove('finish');
-          resolve();
-        }, 800);
+          if (loaderPercentEl) loaderPercentEl.textContent = '100%';
+          animResolve();
+        }, 300); // shorter wait so splash is visible
       };
-      // Slight delay so paint occurs before starting the frame loop
-      setTimeout(() => animateFill(durationMs), 50);
+
+      // Start percent RAF and animateFill
+      rafId = requestAnimationFrame(updatePercent);
+      setTimeout(() => animateFill(durationMs), 20);
+
+      // Safety timeout in case something hangs (duration + extra)
+      const safety = setTimeout(() => {
+        console.warn('Loading safety timeout fired');
+        if (rafId) cancelAnimationFrame(rafId);
+        if (animateFill._timeout) { clearTimeout(animateFill._timeout); animateFill._timeout = null; }
+        if (jerryCanEl) jerryCanEl.classList.remove('finish');
+        if (loaderPercentEl) loaderPercentEl.textContent = '100%';
+        animResolve();
+      }, durationMs + 3000);
+
+      // Wait for both animation and optional task to finish
+      const waitFor = taskPromise ? Promise.all([animPromise, taskPromise]) : animPromise;
+      waitFor.finally(() => {
+        clearTimeout(safety);
+        if (rafId) cancelAnimationFrame(rafId);
+        document.removeEventListener('keydown', onKey);
+        // small delay to let splash finish visually
+        setTimeout(() => {
+          resolve();
+        }, 500);
+      });
     });
   }
 
@@ -125,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearTimeout(animateFill._timeout);
       animateFill._timeout = null;
     }
+    if (loaderPercentEl) loaderPercentEl.textContent = '0%';
   }
 
   function saveState() {

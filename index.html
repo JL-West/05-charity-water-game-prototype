@@ -94,14 +94,14 @@
             <!-- Yellow jerry can: visually represents water filling while loading -->
             <!-- Inline SVG jerry can for crisper visuals. The water rect is animated via JS. -->
             <svg class="jerrycan" viewBox="0 0 56 68" width="68" height="84" aria-hidden="true">
-                <!-- body outline -->
-                <rect x="0" y="0" width="56" height="68" rx="6" fill="#FFC907" stroke="none"></rect>
+                <!-- body outline with subtle stroke -->
+                <rect x="0" y="0" width="56" height="68" rx="6" fill="#FFC907" stroke="#e6a800" stroke-width="1"></rect>
+                <!-- small decorative seam -->
+                <rect x="6" y="10" width="44" height="2" fill="#f6c33a" opacity="0.6"></rect>
                 <!-- cap -->
-                <rect x="44" y="4" width="10" height="6" rx="2" fill="#d97706"></rect>
-                <!-- handle (simple rounded rect visual) -->
-                <rect x="6" y="-4" width="20" height="8" rx="4" fill="transparent" stroke="#d97706" stroke-width="4"></rect>
-                <!-- water is a rect anchored to the bottom; height starts at 0 -->
-                <rect class="water" x="0" y="68" width="56" height="0" fill="url(#waterGradient)"></rect>
+                <rect x="42" y="4" width="10" height="6" rx="2" fill="#d97706"></rect>
+                <!-- handle (simple rounded path) -->
+                <path d="M8 -2 q8 -6 18 0" fill="none" stroke="#be5f03" stroke-width="4" stroke-linecap="round"></path>
                 <!-- gradient definition -->
                 <defs>
                     <linearGradient id="waterGradient" x1="0" x2="0" y1="0" y2="1">
@@ -109,13 +109,17 @@
                         <stop offset="100%" stop-color="#1e3a8a" />
                     </linearGradient>
                 </defs>
+                <!-- water is a rect anchored to the bottom; transform used to scale it -->
+                <rect id="waterRect" class="water" x="0" y="0" width="56" height="68" fill="url(#waterGradient)"></rect>
                 <!-- splash group: 3 droplets positioned above the can -->
                 <g class="splash" transform="translate(4,-6)">
-                    <circle class="drop" cx="10" cy="68" r="2" fill="#60a5fa" opacity="0"></circle>
-                    <circle class="drop" cx="26" cy="68" r="2" fill="#60a5fa" opacity="0"></circle>
-                    <circle class="drop" cx="42" cy="68" r="2" fill="#60a5fa" opacity="0"></circle>
+                    <circle class="drop" cx="10" cy="58" r="2" fill="#60a5fa" opacity="0"></circle>
+                    <circle class="drop" cx="26" cy="58" r="2" fill="#60a5fa" opacity="0"></circle>
+                    <circle class="drop" cx="42" cy="58" r="2" fill="#60a5fa" opacity="0"></circle>
                 </g>
             </svg>
+            <!-- Accessible progress text (aria-live) -->
+            <div id="loaderPercent" class="loader-percent" role="status" aria-live="polite">0%</div>
             <div class="loader-text">Loading game...</div>
         </div>
     </div>

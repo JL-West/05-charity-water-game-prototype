@@ -76,6 +76,8 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 .loading-overlay .loader { background: white; padding: 18px 22px; border-radius: 8px; display:flex; gap: 12px; align-items: center; box-shadow: 0 6px 18px rgba(2,6,23,0.2); }
 .loader-text { font-weight: 600; color: #0f172a; }
 
+.loader-percent { font-weight: 600; color: #0f172a; margin-left: 6px; }
+
 /* Jerry can styles */
 .jerrycan { width: 68px; height: 84px; display: block; }
 /* For the inline SVG, animate the water rect with transform scaleY anchored at the bottom */
@@ -92,6 +94,11 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 	30% { opacity: 1; transform: translateY(-12px) scale(1); }
 	100% { opacity: 0; transform: translateY(-28px) scale(0.6); }
 }
+
+/* small layout tweak for the loader area */
+.loader { display:flex; align-items:center; gap: 12px; }
+.splash { pointer-events:none; }
+
 
 
 /* Small screens fallback (we'll focus on desktop but keep it usable) */
