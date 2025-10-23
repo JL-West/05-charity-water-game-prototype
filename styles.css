@@ -75,7 +75,7 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 .hidden { display: none; }
 
 /* Loading overlay styles */
-.loading-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.45); z-index: 9999; pointer-events: auto; }
+.loading-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.45); z-index: 9999; pointer-events: auto; touch-action: none; }
 .loading-overlay .loader { background: white; padding: 18px 22px; border-radius: 8px; display:flex; gap: 12px; align-items: center; box-shadow: 0 6px 18px rgba(2,6,23,0.2); }
 .loader-text { font-weight: 600; color: #0f172a; }
 
@@ -91,6 +91,11 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 .jerrycan { width: 68px; height: 84px; display: block; }
 /* For the inline SVG, animate the water rect with transform scaleY anchored at the bottom */
 .jerrycan .water { transform-origin: 50% 100%; transform-box: fill-box; transform: scaleY(0); transition: transform 400ms linear; }
+
+/* Ensure the jerrycan box positions the svg and splash correctly */
+.jerrycan-box { width: 68px; height: 84px; display:inline-block; position:relative; }
+.jerrycan svg { display:block; }
+.jerrycan .water { shape-rendering: crispEdges; }
 
 /* Splash droplets and final bounce */
 .jerrycan .splash { position: absolute; bottom: 68px; left: 50%; transform: translateX(-50%); display:flex; gap:6px; width: 48px; justify-content:center; pointer-events:none; }
@@ -119,3 +124,5 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 
 /* When the page should not scroll (modal loaders), add this to the <body> */
 .no-scroll { overflow: hidden !important; }
+html.no-scroll { overflow: hidden !important; height: 100%; }
+body.no-scroll { height: 100%; }

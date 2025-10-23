@@ -60,10 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function showLoading(message = 'Loading...', durationMs = 300, taskPromise = null) {
     // If the jerry loader is visible, hide it to avoid double overlays
     if (jerryLoader) hideJerryLoading();
-    if (!simpleLoader) return Promise.resolve();
+    // If there's no simple loader element (user removed it), fall back to the jerry loader
+    if (!simpleLoader) return showJerryLoading(message, Math.max(durationMs, 300), taskPromise);
   simpleLoader.classList.remove('hidden');
   // Prevent body scrolling/interaction while loader is visible
   document.body.classList.add('no-scroll');
+  document.documentElement.classList.add('no-scroll');
     simpleLoader.setAttribute('aria-hidden', 'false');
     if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
 
@@ -96,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
           simpleLoader.classList.add('hidden');
           document.body.classList.remove('no-scroll');
+          document.documentElement.classList.remove('no-scroll');
           resolve();
         }, 220);
       });
@@ -108,7 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (_simpleTimeout) cancelAnimationFrame(_simpleTimeout);
     if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
     simpleLoader.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('no-scroll');
+  document.body.classList.remove('no-scroll');
+  document.documentElement.classList.remove('no-scroll');
   }
 
   // -------------------------
@@ -119,12 +123,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const jerryLoaderMessage = document.getElementById('jerryLoaderMessage');
   const jerryWater = jerryLoader ? jerryLoader.querySelector('.water') : null;
   const jerryBox = jerryLoader ? jerryLoader.querySelector('.jerrycan-box') : null;
+  // Also keep a reference to the SVG rect element so we can set attributes directly
+  const jerryWaterRect = jerryWater;
 
   function _setJerryPercent(pct) {
     if (jerryLoaderPercent) jerryLoaderPercent.textContent = Math.round(pct) + '%';
     if (jerryWater) {
       // scaleY from 0 -> 1
       jerryWater.style.transform = `scaleY(${pct / 100})`;
+      // Fallback: set rect height and y so some browsers render the fill reliably
+      try {
+        const totalH = 68; // height used in the SVG for the water rect
+        const height = Math.max(0, Math.min(totalH, Math.round((pct / 100) * totalH)));
+        const y = 6 + (totalH - height);
+        jerryWaterRect.setAttribute('height', String(height));
+        jerryWaterRect.setAttribute('y', String(y));
+      } catch (e) {
+        // ignore if attribute setting fails
+      }
     }
   }
 
@@ -133,8 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (simpleLoader) hideLoading();
     if (!jerryLoader) return Promise.resolve();
   jerryLoader.classList.remove('hidden');
-  // Prevent body scrolling/interaction while jerry loader is visible
+  // Prevent page scrolling/interaction while jerry loader is visible
   document.body.classList.add('no-scroll');
+  document.documentElement.classList.add('no-scroll');
     jerryLoader.setAttribute('aria-hidden', 'false');
     if (jerryLoaderMessage) jerryLoaderMessage.textContent = message;
     _setJerryPercent(0);
@@ -173,11 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // show final splash for a short moment, then hide
         setTimeout(() => {
           if (jerryBox) jerryBox.classList.remove('finish');
-          if (jerryLoader) {
+            if (jerryLoader) {
             jerryLoader.classList.add('hidden');
             jerryLoader.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('no-scroll');
-          }
+            document.documentElement.classList.remove('no-scroll');
+           }
           resolve();
         }, 520);
       });
@@ -190,6 +208,9 @@ document.addEventListener('DOMContentLoaded', () => {
     jerryLoader.setAttribute('aria-hidden', 'true');
     if (jerryWater) jerryWater.style.transform = 'scaleY(0)';
     if (jerryLoaderPercent) jerryLoaderPercent.textContent = '0%';
+    if (jerryLoaderMessage) jerryLoaderMessage.textContent = '';
+    if (jerryBox) jerryBox.classList.remove('finish');
+    document.body.classList.remove('no-scroll');
   }
 
   function saveState() {
