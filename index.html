@@ -7,11 +7,24 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- ...existing code... -->
+    <!-- Simple visually hidden heading for screen readers -->
     <h1 class="sr-only">Welcome to the Charity Water Game Prototype</h1>
 
+    <!-- First screen: Main menu / intro -->
+    <div id="screen-1" class="app-screen screen-center">
+        <div class="card intro-card">
+            <h2>Adam's Ale — Community Well Project</h2>
+            <p class="lead">Welcome! Build a well, place tools, and deliver water to the village.</p>
+            <div class="intro-actions">
+                <button id="startBtn" class="btn primary">Start Mission</button>
+                <button id="loadBtn" class="btn">Continue (Load)</button>
+            </div>
+            <p class="small">This prototype uses simple HTML/CSS/JS so students can learn DOM programming.</p>
+        </div>
+    </div>
+
     <!-- Second screen: Desktop / Laptop layout -->
-    <div id="screen-2" class="app-screen">
+    <div id="screen-2" class="app-screen hidden">
         <header class="app-header">
             <div class="left">
                 <button id="backBtn" class="btn">← Back</button>
