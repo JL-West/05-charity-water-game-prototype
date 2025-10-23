@@ -58,8 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const simpleLoaderPercent = document.getElementById('simpleLoaderPercent');
   let _simpleTimeout = null;
   function showLoading(message = 'Loading...', durationMs = 300, taskPromise = null) {
+    // If the jerry loader is visible, hide it to avoid double overlays
+    if (jerryLoader) hideJerryLoading();
     if (!simpleLoader) return Promise.resolve();
     simpleLoader.classList.remove('hidden');
+    simpleLoader.setAttribute('aria-hidden', 'false');
     if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
 
     return new Promise(resolve => {
@@ -101,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     simpleLoader.classList.add('hidden');
     if (_simpleTimeout) cancelAnimationFrame(_simpleTimeout);
     if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
+    simpleLoader.setAttribute('aria-hidden', 'true');
   }
 
   // -------------------------
@@ -121,6 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showJerryLoading(message = 'Loading...', durationMs = 600, taskPromise = null) {
+    // If the simple loader is visible, hide it to avoid overlapping overlays
+    if (simpleLoader) hideLoading();
     if (!jerryLoader) return Promise.resolve();
     jerryLoader.classList.remove('hidden');
     jerryLoader.setAttribute('aria-hidden', 'false');
