@@ -61,28 +61,32 @@ document.addEventListener('DOMContentLoaded', () => {
   let _fillAnim = null;
   function animateFill(durationMs) {
     if (!jerryWaterEl) return;
-    // reset
-    cancelAnimationFrame(_fillAnim);
-    const start = performance.now();
-    function step(now) {
-      const t = Math.min(1, (now - start) / durationMs);
-      const pct = Math.round(t * 100);
-      jerryWaterEl.style.height = pct + '%';
-      if (t < 1) {
-        _fillAnim = requestAnimationFrame(step);
-      } else {
-        // Fill completed - trigger a small splash/bounce
-        if (jerryCanEl) {
-          jerryCanEl.classList.remove('finish');
-          // allow reflow then add class to retrigger animation
-          void jerryCanEl.offsetWidth;
-          jerryCanEl.classList.add('finish');
-        }
-        // return completion so callers can chain actions (handled below)
-        if (typeof animateFill._onComplete === 'function') animateFill._onComplete();
-      }
+    // Clear any previous transition and timeouts
+    jerryWaterEl.style.transition = 'none';
+    jerryWaterEl.style.height = '0%';
+    if (animateFill._timeout) {
+      clearTimeout(animateFill._timeout);
+      animateFill._timeout = null;
     }
-    _fillAnim = requestAnimationFrame(step);
+
+    // Force a reflow so the browser picks up the height reset
+    void jerryWaterEl.offsetWidth;
+
+    // Use a CSS transition for a smooth and reliable fill
+    jerryWaterEl.style.transition = `height ${durationMs}ms linear`;
+    // Start the fill
+    jerryWaterEl.style.height = '100%';
+
+    // When transition completes, trigger the splash and call onComplete
+    animateFill._timeout = setTimeout(() => {
+      // Trigger splash/bounce
+      if (jerryCanEl) {
+        jerryCanEl.classList.remove('finish');
+        void jerryCanEl.offsetWidth;
+        jerryCanEl.classList.add('finish');
+      }
+      if (typeof animateFill._onComplete === 'function') animateFill._onComplete();
+    }, durationMs);
   }
 
   // showLoading now returns a Promise that resolves when the fill and splash complete
@@ -116,10 +120,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!loadingOverlay) return;
     // quickly empty the jerrycan for next time
     if (jerryWaterEl) {
+      // use a short transition to empty nicely
+      jerryWaterEl.style.transition = 'height 200ms linear';
       jerryWaterEl.style.height = '0%';
     }
     loadingOverlay.classList.add('hidden');
-    cancelAnimationFrame(_fillAnim);
+    if (animateFill._timeout) {
+      clearTimeout(animateFill._timeout);
+      animateFill._timeout = null;
+    }
   }
 
   function saveState() {
