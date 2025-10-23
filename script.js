@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadingOverlay = document.getElementById('loadingOverlay');
   // jerrycan fill animation controls
   const jerryWaterEl = loadingOverlay ? loadingOverlay.querySelector('.jerrycan .water') : null;
+  const jerryCanEl = loadingOverlay ? loadingOverlay.querySelector('.jerrycan') : null;
   let _fillAnim = null;
   function animateFill(durationMs) {
     if (!jerryWaterEl) return;
@@ -69,12 +70,24 @@ document.addEventListener('DOMContentLoaded', () => {
       jerryWaterEl.style.height = pct + '%';
       if (t < 1) {
         _fillAnim = requestAnimationFrame(step);
+      } else {
+        // Fill completed - trigger a small splash/bounce
+        if (jerryCanEl) {
+          jerryCanEl.classList.remove('finish');
+          // allow reflow then add class to retrigger animation
+          void jerryCanEl.offsetWidth;
+          jerryCanEl.classList.add('finish');
+          // remove the class after animation completes (300ms bounce + 600ms drops)
+          setTimeout(() => {
+            jerryCanEl.classList.remove('finish');
+          }, 800);
+        }
       }
     }
     _fillAnim = requestAnimationFrame(step);
   }
 
-  function showLoading(message = 'Loading...', durationMs = 700) {
+  function showLoading(message = 'Loading...', durationMs = 400) {
     if (!loadingOverlay) return;
     loadingOverlay.querySelector('.loader-text').textContent = message;
     loadingOverlay.classList.remove('hidden');
@@ -257,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateHUD();
       statusTextEl.textContent = 'Loaded saved game state.';
       hideLoading();
-    }, 700);
+    }, 400);
   });
 
   backBtn.addEventListener('click', () => {
@@ -288,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateInventory();
       updateHUD();
       hideLoading();
-    }, 600);
+    }, 400);
   }
 });
 // Log a message to the console to ensure the script is linked correctly
