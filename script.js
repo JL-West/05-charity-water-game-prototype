@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const simpleLoader = document.getElementById('simpleLoader');
   const simpleLoaderPercent = document.getElementById('simpleLoaderPercent');
   let _simpleTimeout = null;
-  function showLoading(message = 'Loading...', durationMs = 400, taskPromise = null) {
+  function showLoading(message = 'Loading...', durationMs = 300, taskPromise = null) {
     if (!simpleLoader) return Promise.resolve();
     simpleLoader.classList.remove('hidden');
     if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadBtn.addEventListener('click', () => {
     // Show loading overlay and wait for the fill+finish to complete before hiding
-    showLoading('Loading saved game...', 400).then(() => {
+    showLoading('Loading saved game...', 300).then(() => {
       screen1.classList.add('hidden');
       screen2.classList.remove('hidden');
       renderShop();
@@ -264,6 +264,25 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
     });
   });
+
+  // Demo load button: simulates a 1s network request to demonstrate waiting behavior
+  const demoLoadBtn = document.getElementById('demoLoadBtn');
+  if (demoLoadBtn) {
+    demoLoadBtn.addEventListener('click', () => {
+      // Simulated network task (1s)
+      const fakeFetch = new Promise(res => setTimeout(res, 1000));
+      showLoading('Demo loading...', 300, fakeFetch).then(() => {
+        // After demo load, show the game screen
+        screen1.classList.add('hidden');
+        screen2.classList.remove('hidden');
+        renderShop();
+        renderMap();
+        updateInventory();
+        updateHUD();
+        statusTextEl.textContent = 'Demo load complete.';
+      });
+    });
+  }
 
   backBtn.addEventListener('click', () => {
     // Return to main screen
