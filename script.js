@@ -42,11 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const deliverBtn = document.getElementById('deliverWater');
 
   function logDebug(msg) {
-    const el = document.getElementById('debugLog');
-    if (!el) return;
-    el.style.display = 'block';
-    el.textContent = `${new Date().toLocaleTimeString()} — ${msg}`;
-    console.log('[DEBUG]', msg);
+    // debug helper removed — kept as a no-op to avoid runtime errors if calls remain
+    // (originally showed a small on-page debug banner during development)
+    // console.log('[DEBUG]', msg);
   }
 
   // Shop items
@@ -268,16 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHUD();
     // Ensure any loader overlays are hidden when starting
     try { hideLoading(); } catch (e) {}
-    try { hideJerryLoading(); } catch (e) {}
     statusTextEl.textContent = 'Mission started. Select an item from the shop.';
   });
-  logDebug('startBtn handler attached');
+  // startBtn handler attached
 
   loadBtn.addEventListener('click', () => {
-  logDebug('loadBtn clicked');
+  // loadBtn clicked
     // Show loading overlay and wait for the fill+finish to complete before hiding
     showLoading('Loading saved game...', 300).then(() => {
-  logDebug('showLoading resolved for loadBtn');
+  // showLoading resolved for loadBtn
       screen1.classList.add('hidden');
       screen2.classList.remove('hidden');
       renderShop();
@@ -288,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
     });
   });
-  logDebug('loadBtn handler attached');
+  // loadBtn handler attached
 
   // Demo load removed per user request
 
@@ -298,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     screen1.classList.remove('hidden');
     statusTextEl.textContent = 'Returned to the main menu.';
   });
-  logDebug('backBtn handler attached');
+  // backBtn handler attached
 
   // Help button exists in markup; attach listener if present
   const helpBtn = document.getElementById('helpBtn');
@@ -307,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Help:\n1) Select an item from the shop.\n2) Click a plot on the map to place it.\n3) Press Deliver Water to deliver resources and earn money.');
     });
   }
-  logDebug('helpBtn handler attached');
+  // helpBtn handler attached
 
   // If the user previously had screen2 open (persisted), show it directly
   if (state.placedItems && state.placedItems.length > 0) {

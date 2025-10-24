@@ -102,6 +102,17 @@
         </footer>
     <!-- loader overlays are provided by the simple spinner in `#simpleLoader` -->
 
+    <!-- Simple loader overlay (spinner + percent). Keeps UI from interacting while loading -->
+    <div id="simpleLoader" class="simple-loader hidden" aria-hidden="true">
+        <div class="simple-loader-box" role="status" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <div>
+                <div class="loader-text">Loading...</div>
+                <div id="simpleLoaderPercent" class="loader-percent">0%</div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
