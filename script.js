@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadBtn.addEventListener('click', () => {
   // loadBtn clicked
     // Show loading overlay and wait for the fill+finish to complete before hiding
-    showLoading('Loading saved game...', 300).then(() => {
+  showLoading('Loading saved game...', 1000).then(() => {
   // showLoading resolved for loadBtn
       screen1.classList.add('hidden');
       screen2.classList.remove('hidden');
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // If the user previously had screen2 open (persisted), show it directly
   if (state.placedItems && state.placedItems.length > 0) {
     // Show loading overlay while restoring
-    showLoading('Restoring saved game...', 400).then(() => {
+  showLoading('Restoring saved game...', 1000).then(() => {
       // Start in screen2 so players return to their placed items quickly
       screen1.classList.add('hidden');
       screen2.classList.remove('hidden');
