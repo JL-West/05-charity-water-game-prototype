@@ -60,63 +60,62 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalTiles = MAP_COLS * MAP_ROWS;
 
   // Simple loader implementation using the small overlay added to index.html
-  const simpleLoader = document.getElementById('simpleLoader');
-  const simpleLoaderPercent = document.getElementById('simpleLoaderPercent');
-  let _simpleTimeout = null;
-  function showLoading(message = 'Loading...', durationMs = 300, taskPromise = null) {
-    // If there's no simple loader element (removed or missing), gracefully resolve
-    if (!simpleLoader) return Promise.resolve();
-  simpleLoader.classList.remove('hidden');
-  // Prevent body scrolling/interaction while loader is visible
-  document.body.classList.add('no-scroll');
-  document.documentElement.classList.add('no-scroll');
-    simpleLoader.setAttribute('aria-hidden', 'false');
-    if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
+  // Inline indicator implementation (non-blocking)
+  const inlineIndicator = document.getElementById('inlineIndicator');
+  const inlineText = document.getElementById('inlineIndicatorText');
+  const inlinePct = document.getElementById('inlineIndicatorPct');
+  let _indicatorRaf = null;
+
+  function showIndicator(message = 'Loading...', durationMs = 600, taskPromise = null) {
+    if (!inlineIndicator) return Promise.resolve();
+    inlineText.textContent = message;
+    if (inlinePct) inlinePct.textContent = '0%';
+    inlineIndicator.classList.remove('hidden');
+    inlineIndicator.setAttribute('aria-hidden', 'false');
+
+    // If provided a taskPromise, wait for it to settle; otherwise simulate progress
+    if (taskPromise && typeof taskPromise.then === 'function') {
+      // Optionally show indeterminate state; we'll keep percent at 0 until settled
+      return taskPromise.finally(() => { hideIndicator(); });
+    }
 
     return new Promise(resolve => {
       const start = performance.now();
       function step(now) {
         const t = Math.min(1, (now - start) / durationMs);
         const pct = Math.round(t * 100);
-        if (simpleLoaderPercent) simpleLoaderPercent.textContent = pct + '%';
+        if (inlinePct) inlinePct.textContent = pct + '%';
         if (t < 1) {
-          _simpleTimeout = requestAnimationFrame(step);
+          _indicatorRaf = requestAnimationFrame(step);
+        } else {
+          setTimeout(() => { hideIndicator(); resolve(); }, 160);
         }
       }
-      _simpleTimeout = requestAnimationFrame(step);
-
-      // Wait for both the animation and optional task to finish
-      const animDone = new Promise(res => setTimeout(res, durationMs));
-      const waitFor = taskPromise ? Promise.all([animDone, taskPromise]) : animDone;
-      // Safety timeout so it never hangs
-      const safety = setTimeout(() => {
-        console.warn('Simple loader safety timeout');
-        resolve();
-      }, durationMs + 3000);
-
-      waitFor.finally(() => {
-        clearTimeout(safety);
-        if (_simpleTimeout) cancelAnimationFrame(_simpleTimeout);
-        if (simpleLoaderPercent) simpleLoaderPercent.textContent = '100%';
-        // small delay so user sees 100%
-        setTimeout(() => {
-          simpleLoader.classList.add('hidden');
-          document.body.classList.remove('no-scroll');
-          document.documentElement.classList.remove('no-scroll');
-          resolve();
-        }, 220);
-      });
+      _indicatorRaf = requestAnimationFrame(step);
     });
   }
 
+  function updateIndicator(pct) {
+    if (!inlineIndicator || inlineIndicator.classList.contains('hidden')) return;
+    if (!inlinePct) return;
+    inlinePct.textContent = `${Math.min(100, Math.max(0, Math.round(pct)))}%`;
+  }
+
+  function hideIndicator() {
+    if (!inlineIndicator) return;
+    inlineIndicator.classList.add('hidden');
+    inlineIndicator.setAttribute('aria-hidden', 'true');
+    if (inlinePct) inlinePct.textContent = '0%';
+    if (_indicatorRaf) { cancelAnimationFrame(_indicatorRaf); _indicatorRaf = null; }
+  }
+
+  // Keep the old loader API but wire to inline indicator (returns a Promise)
+  function showLoading(message = 'Loading...', durationMs = 300, taskPromise = null) {
+    return showIndicator(message, durationMs, taskPromise);
+  }
+
   function hideLoading() {
-    if (!simpleLoader) return;
-    simpleLoader.classList.add('hidden');
-    if (_simpleTimeout) cancelAnimationFrame(_simpleTimeout);
-    if (simpleLoaderPercent) simpleLoaderPercent.textContent = '0%';
-    simpleLoader.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('no-scroll');
-  document.documentElement.classList.remove('no-scroll');
+    hideIndicator();
   }
 
   function saveState() {

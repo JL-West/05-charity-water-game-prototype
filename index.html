@@ -30,6 +30,14 @@
                 <button id="startBtn" class="btn primary">Start Mission</button>
                 <button id="loadBtn" class="btn">Continue (Load)</button>
             </div>
+            <!-- Inline, non-blocking indicator shown next to the load button -->
+            <div style="display:flex;align-items:center;justify-content:center;margin-top:8px;gap:8px;">
+                <div id="inlineIndicator" class="inline-indicator hidden" role="status" aria-live="polite" aria-hidden="true">
+                    <span class="inline-spinner" aria-hidden="true"></span>
+                    <span id="inlineIndicatorText" class="inline-text">Loading...</span>
+                    <span id="inlineIndicatorPct" class="inline-pct">0%</span>
+                </div>
+            </div>
             <div style="margin-top:8px;">
                 <a class="btn" href="https://www.figma.com/proto/dcjWRW8CHaVQE1QV38d0yE/Adam-s-Ale?node-id=0-1&t=o031IUey9KEXQKv1-1" target="_blank" rel="noopener noreferrer">Open Figma Wireframe</a>
             </div>
@@ -101,17 +109,6 @@
             <small>Desktop preview — responsive layout intended for laptop/desktop</small>
         </footer>
     <!-- loader overlays are provided by the simple spinner in `#simpleLoader` -->
-
-    <!-- Simple loader overlay (spinner + percent). Keeps UI from interacting while loading -->
-    <div id="simpleLoader" class="simple-loader hidden" aria-hidden="true">
-        <div class="simple-loader-box" role="status" aria-live="polite">
-            <div class="spinner" aria-hidden="true"></div>
-            <div>
-                <div class="loader-text">Loading...</div>
-                <div id="simpleLoaderPercent" class="loader-percent">0%</div>
-            </div>
-        </div>
-    </div>
 
     <script src="script.js"></script>
 </body>

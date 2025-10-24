@@ -81,15 +81,44 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 
 .loader-percent { font-weight: 600; color: #0f172a; margin-left: 6px; }
 
-/* Simple loader styles */
-.simple-loader { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.35); z-index: 1200; }
-.simple-loader-box { background: white; padding: 12px 16px; border-radius: 8px; display:flex; align-items:center; gap: 10px; box-shadow: 0 6px 18px rgba(2,6,23,0.18); }
-.simple-loader .spinner { width: 28px; height: 28px; border-radius: 50%; border: 4px solid #e6eef6; border-top-color: #0ea5a4; animation: spin 800ms linear infinite; }
-.simple-loader .loader-percent { font-weight:700; color:#0f172a; }
+/* Simple loader removed — loader API is now a no-op to avoid blocking UX */
 /* (Jerrycan loader removed - keeping only the simple loader for reliability) */
 /* small layout tweak for the loader area */
 .loader { display:flex; align-items:center; gap: 12px; }
 .splash { pointer-events:none; }
+
+/* Inline, non-blocking indicator (small spinner + percent) */
+:root {
+	--indicator-bg: rgba(255,255,255,0.95);
+	--indicator-accent: #0ea5a4;
+	--indicator-text: #0f172a;
+	--indicator-radius: 6px;
+	--indicator-font: 0.9rem;
+}
+.inline-indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	background: var(--indicator-bg);
+	color: var(--indicator-text);
+	border-radius: var(--indicator-radius);
+	box-shadow: 0 2px 6px rgba(2,6,23,0.06);
+	font-size: var(--indicator-font);
+	pointer-events: none; /* non-blocking */
+	opacity: 0;
+	transform: translateY(-2px);
+	transition: opacity 180ms ease, transform 180ms ease;
+}
+.inline-indicator:not(.hidden) { opacity: 1; transform: translateY(0); }
+.inline-spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #e6eef6; border-top-color: var(--indicator-accent); animation: spin 700ms linear infinite; }
+.inline-pct { font-weight:700; color:var(--indicator-accent); margin-left:6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width:480px) {
+	.inline-indicator { font-size: 0.8rem; gap:6px; padding:4px 6px; }
+	.inline-pct { display:none; }
+}
 
 
 
