@@ -255,17 +255,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Screen transitions
   startBtn.addEventListener('click', () => {
-    // Basic start: show screen2 and initialize components
-    screen1.classList.add('hidden');
-    screen2.classList.remove('hidden');
-    // Re-render UI elements
-    renderShop();
-    renderMap();
-    updateInventory();
-    updateHUD();
-    // Ensure any loader overlays are hidden when starting
-    try { hideLoading(); } catch (e) {}
-    statusTextEl.textContent = 'Mission started. Select an item from the shop.';
+    // Show a brief non-blocking inline indicator while we initialize the mission
+    showLoading('Starting mission...', 800).then(() => {
+      // Basic start: show screen2 and initialize components
+      screen1.classList.add('hidden');
+      screen2.classList.remove('hidden');
+      // Re-render UI elements
+      renderShop();
+      renderMap();
+      updateInventory();
+      updateHUD();
+      // Ensure any loader overlays/indicators are hidden when starting
+      try { hideLoading(); } catch (e) {}
+      statusTextEl.textContent = 'Mission started. Select an item from the shop.';
+    });
   });
   // startBtn handler attached
 
