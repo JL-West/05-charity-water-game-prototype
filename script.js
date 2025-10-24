@@ -66,10 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const simpleLoaderPercent = document.getElementById('simpleLoaderPercent');
   let _simpleTimeout = null;
   function showLoading(message = 'Loading...', durationMs = 300, taskPromise = null) {
-    // If the jerry loader is visible, hide it to avoid double overlays
-    if (jerryLoader) hideJerryLoading();
-    // If there's no simple loader element (user removed it), fall back to the jerry loader
-    if (!simpleLoader) return showJerryLoading(message, Math.max(durationMs, 300), taskPromise);
+    // If there's no simple loader element (removed or missing), gracefully resolve
+    if (!simpleLoader) return Promise.resolve();
   simpleLoader.classList.remove('hidden');
   // Prevent body scrolling/interaction while loader is visible
   document.body.classList.add('no-scroll');
@@ -121,122 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
     simpleLoader.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('no-scroll');
   document.documentElement.classList.remove('no-scroll');
-  }
-
-  // -------------------------
-  // Jerrycan thematic loader
-  // -------------------------
-  const jerryLoader = document.getElementById('jerryLoader');
-  const jerryLoaderPercent = document.getElementById('jerryLoaderPercent');
-  const jerryLoaderMessage = document.getElementById('jerryLoaderMessage');
-  const jerryWater = jerryLoader ? jerryLoader.querySelector('.water') : null;
-  const jerryBox = jerryLoader ? jerryLoader.querySelector('.jerrycan-box') : null;
-  // Also keep a reference to the SVG rect element so we can set attributes directly
-  const jerryWaterRect = jerryWater;
-  // internal timers for jerry loader so we can force-hide when stuck
-  let _jerryRafId = null;
-  let _jerrySafety = null;
-  let _jerryHideTimeout = null;
-
-  function _setJerryPercent(pct) {
-    if (jerryLoaderPercent) jerryLoaderPercent.textContent = Math.round(pct) + '%';
-    if (jerryWater) {
-      // scaleY from 0 -> 1
-      jerryWater.style.transform = `scaleY(${pct / 100})`;
-      // Fallback: set rect height and y so some browsers render the fill reliably
-      try {
-        const totalH = 68; // height used in the SVG for the water rect
-        const height = Math.max(0, Math.min(totalH, Math.round((pct / 100) * totalH)));
-        const y = 6 + (totalH - height);
-        jerryWaterRect.setAttribute('height', String(height));
-        jerryWaterRect.setAttribute('y', String(y));
-      } catch (e) {
-        // ignore if attribute setting fails
-      }
-      // If we've reached 100%, schedule a safe hide so UI doesn't get stuck
-      if (pct >= 100) {
-        if (_jerryHideTimeout) clearTimeout(_jerryHideTimeout);
-        _jerryHideTimeout = setTimeout(() => {
-          if (jerryLoader && !jerryLoader.classList.contains('hidden')) {
-            try { hideJerryLoading(); } catch (e) { /* ignore */ }
-          }
-        }, 420);
-      }
-    }
-  }
-
-  function showJerryLoading(message = 'Loading...', durationMs = 600, taskPromise = null) {
-    // If the simple loader is visible, hide it to avoid overlapping overlays
-    if (simpleLoader) hideLoading();
-    if (!jerryLoader) return Promise.resolve();
-  jerryLoader.classList.remove('hidden');
-  // Prevent page scrolling/interaction while jerry loader is visible
-  document.body.classList.add('no-scroll');
-  document.documentElement.classList.add('no-scroll');
-    jerryLoader.setAttribute('aria-hidden', 'false');
-    if (jerryLoaderMessage) jerryLoaderMessage.textContent = message;
-    _setJerryPercent(0);
-
-    return new Promise(resolve => {
-      const start = performance.now();
-      function tick(now) {
-        const t = Math.min(1, (now - start) / durationMs);
-        _setJerryPercent(t * 100);
-        if (t < 1) _jerryRafId = requestAnimationFrame(tick);
-      }
-      _jerryRafId = requestAnimationFrame(tick);
-
-      const animDone = new Promise(res => setTimeout(res, durationMs));
-      const waitFor = taskPromise ? Promise.all([animDone, taskPromise]) : animDone;
-
-      // Safety timeout
-      _jerrySafety = setTimeout(() => {
-        console.warn('Jerry loader safety timeout');
-        cleanup();
-        resolve();
-      }, durationMs + 400);
-
-      function cleanup() {
-        if (_jerryRafId) cancelAnimationFrame(_jerryRafId);
-        _jerryRafId = null;
-        // ensure full fill
-        _setJerryPercent(100);
-        // small splash effect: add .finish to the jerrycan box to trigger CSS drop animations
-        if (jerryBox) jerryBox.classList.add('finish');
-      }
-
-      waitFor.finally(() => {
-        if (_jerrySafety) { clearTimeout(_jerrySafety); _jerrySafety = null; }
-        cleanup();
-        // show final splash for a short moment, then hide
-        _jerryHideTimeout = setTimeout(() => {
-          if (jerryBox) jerryBox.classList.remove('finish');
-          if (jerryLoader) {
-            jerryLoader.classList.add('hidden');
-            jerryLoader.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('no-scroll');
-            document.documentElement.classList.remove('no-scroll');
-          }
-          _jerryHideTimeout = null;
-          resolve();
-        }, 520);
-      });
-    });
-  }
-
-  function hideJerryLoading() {
-    if (!jerryLoader) return;
-    jerryLoader.classList.add('hidden');
-    jerryLoader.setAttribute('aria-hidden', 'true');
-    if (jerryWater) jerryWater.style.transform = 'scaleY(0)';
-    if (jerryLoaderPercent) jerryLoaderPercent.textContent = '0%';
-    if (jerryLoaderMessage) jerryLoaderMessage.textContent = '';
-    if (jerryBox) jerryBox.classList.remove('finish');
-    if (_jerryRafId) { cancelAnimationFrame(_jerryRafId); _jerryRafId = null; }
-    if (_jerrySafety) { clearTimeout(_jerrySafety); _jerrySafety = null; }
-    if (_jerryHideTimeout) { clearTimeout(_jerryHideTimeout); _jerryHideTimeout = null; }
-    document.body.classList.remove('no-scroll');
-    document.documentElement.classList.remove('no-scroll');
   }
 
   function saveState() {

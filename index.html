@@ -100,37 +100,7 @@
         <footer class="app-footer">
             <small>Desktop preview — responsive layout intended for laptop/desktop</small>
         </footer>
-    <!-- Jerrycan thematic loader (non-blocking) -->
-    <div id="jerryLoader" class="loading-overlay hidden" role="status" aria-live="polite" aria-hidden="true">
-        <div class="loader">
-            <div class="jerrycan-box" style="position:relative;">
-                <!-- Inline SVG jerrycan: water rect has class 'water' that we animate with CSS/JS -->
-                <svg class="jerrycan" viewBox="0 0 68 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <defs>
-                        <clipPath id="canClip"><rect x="8" y="6" width="52" height="68" rx="6" ry="6"/></clipPath>
-                    </defs>
-                    <rect x="0" y="0" width="68" height="84" rx="6" fill="#FFC907" />
-                    <g clip-path="url(#canClip)">
-                        <!-- Water rectangle. We'll animate scaleY from 0 -> 1. transform-box handled in CSS. -->
-                        <rect class="water" x="8" y="6" width="52" height="68" fill="#60A5FA" />
-                    </g>
-                </svg>
-                <div class="splash" style="position:absolute; left:50%; transform:translateX(-50%); bottom:8px;">
-                    <div class="drop"></div>
-                    <div class="drop"></div>
-                    <div class="drop"></div>
-                </div>
-            </div>
-
-            <div class="loader-text">
-                <div id="jerryLoaderMessage">Loading...</div>
-                <div id="jerryLoaderPercent" class="loader-percent">0%</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Temporary debug banner (visible when debug messages are posted) -->
-    <div id="debugLog" style="position:fixed;bottom:8px;left:8px;z-index:10000;font-size:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;display:none;box-shadow:0 4px 12px rgba(2,6,23,0.08);">Debug</div>
+    <!-- loader overlays are provided by the simple spinner in `#simpleLoader` -->
 
     <script src="script.js"></script>
 </body>
