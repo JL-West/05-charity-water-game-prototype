@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let _jerryHideTimeout = null;
 
   function _setJerryPercent(pct) {
-    if (jerryLoaderPercent) jerryLoaderPercent.textContent = Math.round(pct) + '100%';
+    if (jerryLoaderPercent) jerryLoaderPercent.textContent = Math.round(pct) + '%';
     if (jerryWater) {
       // scaleY from 0 -> 1
       jerryWater.style.transform = `scaleY(${pct / 100})`;
@@ -384,6 +384,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMap();
     updateInventory();
     updateHUD();
+    // Ensure any loader overlays are hidden when starting
+    try { hideLoading(); } catch (e) {}
+    try { hideJerryLoading(); } catch (e) {}
     statusTextEl.textContent = 'Mission started. Select an item from the shop.';
   });
   logDebug('startBtn handler attached');
