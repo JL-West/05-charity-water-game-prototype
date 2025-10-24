@@ -41,6 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusTextEl = document.getElementById('statusText');
   const deliverBtn = document.getElementById('deliverWater');
 
+  function logDebug(msg) {
+    const el = document.getElementById('debugLog');
+    if (!el) return;
+    el.style.display = 'block';
+    el.textContent = `${new Date().toLocaleTimeString()} — ${msg}`;
+    console.log('[DEBUG]', msg);
+  }
+
   // Shop items
   const shopItems = [
     { id: 'bucket', name: 'Bucket', cost: 10, effect: { water: 5 } },
@@ -131,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let _jerryHideTimeout = null;
 
   function _setJerryPercent(pct) {
-    if (jerryLoaderPercent) jerryLoaderPercent.textContent = Math.round(pct) + '%';
+    if (jerryLoaderPercent) jerryLoaderPercent.textContent = Math.round(pct) + '100%';
     if (jerryWater) {
       // scaleY from 0 -> 1
       jerryWater.style.transform = `scaleY(${pct / 100})`;
@@ -186,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Jerry loader safety timeout');
         cleanup();
         resolve();
-      }, durationMs + 4000);
+      }, durationMs + 400);
 
       function cleanup() {
         if (_jerryRafId) cancelAnimationFrame(_jerryRafId);
@@ -378,10 +386,13 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHUD();
     statusTextEl.textContent = 'Mission started. Select an item from the shop.';
   });
+  logDebug('startBtn handler attached');
 
   loadBtn.addEventListener('click', () => {
+  logDebug('loadBtn clicked');
     // Show loading overlay and wait for the fill+finish to complete before hiding
     showLoading('Loading saved game...', 300).then(() => {
+  logDebug('showLoading resolved for loadBtn');
       screen1.classList.add('hidden');
       screen2.classList.remove('hidden');
       renderShop();
@@ -392,15 +403,18 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
     });
   });
+  logDebug('loadBtn handler attached');
 
   // Demo load button: simulates a 1s network request to demonstrate waiting behavior
   const demoLoadBtn = document.getElementById('demoLoadBtn');
   if (demoLoadBtn) {
     demoLoadBtn.addEventListener('click', () => {
+  logDebug('demoLoadBtn clicked');
       // Simulated network task (1s)
       const fakeFetch = new Promise(res => setTimeout(res, 1000));
       // Use the jerrycan thematic loader (non-blocking) for demo
       showJerryLoading('Demo loading...', 700, fakeFetch).then(() => {
+  logDebug('showJerryLoading resolved for demoLoadBtn');
         // After demo load, show the game screen
         screen1.classList.add('hidden');
         screen2.classList.remove('hidden');
@@ -412,6 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+  logDebug('demoLoadBtn handler attached');
 
   backBtn.addEventListener('click', () => {
     // Return to main screen
@@ -419,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
     screen1.classList.remove('hidden');
     statusTextEl.textContent = 'Returned to the main menu.';
   });
+  logDebug('backBtn handler attached');
 
   // Help button exists in markup; attach listener if present
   const helpBtn = document.getElementById('helpBtn');
@@ -427,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Help:\n1) Select an item from the shop.\n2) Click a plot on the map to place it.\n3) Press Deliver Water to deliver resources and earn money.');
     });
   }
+  logDebug('helpBtn handler attached');
 
   // If the user previously had screen2 open (persisted), show it directly
   if (state.placedItems && state.placedItems.length > 0) {
