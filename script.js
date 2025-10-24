@@ -125,6 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const jerryBox = jerryLoader ? jerryLoader.querySelector('.jerrycan-box') : null;
   // Also keep a reference to the SVG rect element so we can set attributes directly
   const jerryWaterRect = jerryWater;
+  // internal timers for jerry loader so we can force-hide when stuck
+  let _jerryRafId = null;
+  let _jerrySafety = null;
+  let _jerryHideTimeout = null;
 
   function _setJerryPercent(pct) {
     if (jerryLoaderPercent) jerryLoaderPercent.textContent = Math.round(pct) + '%';
@@ -140,6 +144,15 @@ document.addEventListener('DOMContentLoaded', () => {
         jerryWaterRect.setAttribute('y', String(y));
       } catch (e) {
         // ignore if attribute setting fails
+      }
+      // If we've reached 100%, schedule a safe hide so UI doesn't get stuck
+      if (pct >= 100) {
+        if (_jerryHideTimeout) clearTimeout(_jerryHideTimeout);
+        _jerryHideTimeout = setTimeout(() => {
+          if (jerryLoader && !jerryLoader.classList.contains('hidden')) {
+            try { hideJerryLoading(); } catch (e) { /* ignore */ }
+          }
+        }, 420);
       }
     }
   }
@@ -158,26 +171,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return new Promise(resolve => {
       const start = performance.now();
-      let rafId = null;
       function tick(now) {
         const t = Math.min(1, (now - start) / durationMs);
         _setJerryPercent(t * 100);
-        if (t < 1) rafId = requestAnimationFrame(tick);
+        if (t < 1) _jerryRafId = requestAnimationFrame(tick);
       }
-      rafId = requestAnimationFrame(tick);
+      _jerryRafId = requestAnimationFrame(tick);
 
       const animDone = new Promise(res => setTimeout(res, durationMs));
       const waitFor = taskPromise ? Promise.all([animDone, taskPromise]) : animDone;
 
       // Safety timeout
-      const safety = setTimeout(() => {
+      _jerrySafety = setTimeout(() => {
         console.warn('Jerry loader safety timeout');
         cleanup();
         resolve();
       }, durationMs + 4000);
 
       function cleanup() {
-        if (rafId) cancelAnimationFrame(rafId);
+        if (_jerryRafId) cancelAnimationFrame(_jerryRafId);
+        _jerryRafId = null;
         // ensure full fill
         _setJerryPercent(100);
         // small splash effect: add .finish to the jerrycan box to trigger CSS drop animations
@@ -185,17 +198,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       waitFor.finally(() => {
-        clearTimeout(safety);
+        if (_jerrySafety) { clearTimeout(_jerrySafety); _jerrySafety = null; }
         cleanup();
         // show final splash for a short moment, then hide
-        setTimeout(() => {
+        _jerryHideTimeout = setTimeout(() => {
           if (jerryBox) jerryBox.classList.remove('finish');
-            if (jerryLoader) {
+          if (jerryLoader) {
             jerryLoader.classList.add('hidden');
             jerryLoader.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('no-scroll');
             document.documentElement.classList.remove('no-scroll');
-           }
+          }
+          _jerryHideTimeout = null;
           resolve();
         }, 520);
       });
@@ -210,7 +224,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (jerryLoaderPercent) jerryLoaderPercent.textContent = '0%';
     if (jerryLoaderMessage) jerryLoaderMessage.textContent = '';
     if (jerryBox) jerryBox.classList.remove('finish');
+    if (_jerryRafId) { cancelAnimationFrame(_jerryRafId); _jerryRafId = null; }
+    if (_jerrySafety) { clearTimeout(_jerrySafety); _jerrySafety = null; }
+    if (_jerryHideTimeout) { clearTimeout(_jerryHideTimeout); _jerryHideTimeout = null; }
     document.body.classList.remove('no-scroll');
+    document.documentElement.classList.remove('no-scroll');
   }
 
   function saveState() {
