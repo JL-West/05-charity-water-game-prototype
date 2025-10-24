@@ -405,28 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   logDebug('loadBtn handler attached');
 
-  // Demo load button: simulates a 1s network request to demonstrate waiting behavior
-  const demoLoadBtn = document.getElementById('demoLoadBtn');
-  if (demoLoadBtn) {
-    demoLoadBtn.addEventListener('click', () => {
-  logDebug('demoLoadBtn clicked');
-      // Simulated network task (1s)
-      const fakeFetch = new Promise(res => setTimeout(res, 1000));
-      // Use the jerrycan thematic loader (non-blocking) for demo
-      showJerryLoading('Demo loading...', 700, fakeFetch).then(() => {
-  logDebug('showJerryLoading resolved for demoLoadBtn');
-        // After demo load, show the game screen
-        screen1.classList.add('hidden');
-        screen2.classList.remove('hidden');
-        renderShop();
-        renderMap();
-        updateInventory();
-        updateHUD();
-        statusTextEl.textContent = 'Demo load complete.';
-      });
-    });
-  }
-  logDebug('demoLoadBtn handler attached');
+  // Demo load removed per user request
 
   backBtn.addEventListener('click', () => {
     // Return to main screen
