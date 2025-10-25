@@ -49,11 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // console.log('[DEBUG]', msg);
   }
 
-  // Shop items
+  // Shop items (medieval-themed names; effects keep the same shape for the prototype)
   const shopItems = [
-    { id: 'bucket', name: 'Bucket', cost: 10, effect: { water: 5 } },
-    { id: 'pump', name: 'Hand Pump', cost: 40, effect: { water: 20 } },
-    { id: 'pipe', name: 'Pipe', cost: 15, effect: { water: 0 } },
+    { id: 'waterskin', name: 'Waterskin', cost: 10, effect: { water: 5 } },
+    { id: 'handaxe', name: 'Hand Axe', cost: 40, effect: { water: 20 } },
+    { id: 'rope', name: 'Rope', cost: 15, effect: { water: 0 } },
   ];
 
   // Map dimensions
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
       buyBtn.textContent = 'Select';
       buyBtn.addEventListener('click', () => {
         state.selectedTool = item;
-        statusTextEl.textContent = `Selected: ${item.name}. Click a map tile to place it.`;
+    statusTextEl.textContent = `Selected: ${item.name}. Click a map tile to place it.`;
         Array.from(shopListEl.querySelectorAll('.shop-item')).forEach(el => el.style.boxShadow = '');
         itemEl.style.boxShadow = '0 0 0 2px rgba(14,165,164,0.14)';
       });
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateInventory();
       updateHUD();
       saveState();
-      statusTextEl.textContent = `Removed ${existing.item.name} from this plot. Refunded $${refund}.`;
+  statusTextEl.textContent = `Removed ${existing.item.name} from this plot. Refunded $${refund}.`;
       return;
     }
 
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateInventory();
     updateHUD();
     saveState();
-    statusTextEl.textContent = `${state.selectedTool.name} placed on Plot ${index + 1}. Click again to remove (partial refund).`;
+  statusTextEl.textContent = `${state.selectedTool.name} placed on Plot ${index + 1}. Click again to remove (partial refund).`;
   }
 
   // Deliver water logic
@@ -286,16 +286,16 @@ document.addEventListener('DOMContentLoaded', () => {
       state.funds += reward;
       updateHUD();
       saveState();
-      statusTextEl.textContent = `Delivered ${gained} L of water to the village. Earned $${reward}.`;
+      statusTextEl.textContent = `Delivered ${gained} supplies to the hamlet. Earned $${reward}.`;
       checkAchievements();
     });
   }
 
   // Achievements (simple examples)
   function checkAchievements() {
-    if (state.waterDelivered >= 100 && !state.achievements.includes('100L')) {
-      state.achievements.push('100L');
-      alert('Achievement unlocked: 100 L delivered!');
+    if (state.waterDelivered >= 100 && !state.achievements.includes('100S')) {
+      state.achievements.push('100S');
+      alert('Achievement unlocked: 100 supplies delivered!');
     }
     saveState();
   }
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Screen transitions
   startBtn.addEventListener('click', () => {
     // Show a brief non-blocking inline indicator while we initialize the mission
-    showLoading('Starting mission...', 800).then(() => {
+  showLoading('Starting quest...', 800).then(() => {
       // Basic start: show screen2 and initialize components
       screen1.classList.add('hidden');
       screen2.classList.remove('hidden');
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateHUD();
       // Ensure any loader overlays/indicators are hidden when starting
       try { hideLoading(); } catch (e) {}
-      statusTextEl.textContent = 'Mission started. Select an item from the shop.';
+  statusTextEl.textContent = 'Quest started. Select an item from the shop.';
     });
   });
   // startBtn handler attached
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const helpBtn = document.getElementById('helpBtn');
   if (helpBtn) {
     helpBtn.addEventListener('click', () => {
-      alert('Help:\n1) Select an item from the shop.\n2) Click a plot on the map to place it.\n3) Press Deliver Water to deliver resources and earn money.');
+      alert('Help:\n1) Select an item from the shop.\n2) Click a plot on the map to place it.\n3) Press Deliver Supplies to deliver resources and earn money.');
     });
   }
   // helpBtn handler attached
