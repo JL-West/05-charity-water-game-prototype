@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const mapGridEl = document.getElementById('mapGrid');
   const statusTextEl = document.getElementById('statusText');
   const deliverBtn = document.getElementById('deliverWater');
+  const playerNameEl = document.getElementById('playerName');
+  const playerAvatarEl = document.getElementById('playerAvatar');
 
   function logDebug(msg) {
     // debug helper removed — kept as a no-op to avoid runtime errors if calls remain
@@ -172,6 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateHUD() {
     fundsEl.textContent = state.funds;
     waterEl.textContent = state.waterDelivered;
+    if (playerNameEl) playerNameEl.textContent = state.playerName || 'Player 1';
+    if (playerAvatarEl) playerAvatarEl.textContent = state.avatar || '';
   }
 
   function renderShop() {
@@ -334,7 +338,8 @@ document.addEventListener('DOMContentLoaded', () => {
         avatarListEl.querySelectorAll('.avatar-option').forEach(btn => btn.classList.remove('selected'));
         selectedAvatar = state.avatar || null;
         if (selectedAvatar) {
-          const sel = avatarListEl.querySelector(`[data-avatar="${selectedAvatar}"]`);
+          // find button by emoji textContent
+          const sel = Array.from(avatarListEl.querySelectorAll('.avatar-option')).find(b => b.textContent.trim() === selectedAvatar);
           if (sel) sel.classList.add('selected');
         }
       }
@@ -347,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!btn) return;
       avatarListEl.querySelectorAll('.avatar-option').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      selectedAvatar = btn.getAttribute('data-avatar');
+      // store the emoji itself as the avatar value (easier to display later)
+      selectedAvatar = btn.textContent.trim();
     });
   }
 
@@ -371,8 +377,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedAvatar) state.avatar = selectedAvatar;
         saveState();
         // Update player name in HUD if present
-        const playerNameEl = document.getElementById('playerName');
         if (playerNameEl) playerNameEl.textContent = state.playerName;
+        if (playerAvatarEl) playerAvatarEl.textContent = state.avatar || '';
         // Move to game screen
         screen3.classList.add('hidden');
         screen2.classList.remove('hidden');
