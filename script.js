@@ -330,19 +330,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (createCharBtn) {
     createCharBtn.addEventListener('click', () => {
-      screen1.classList.add('hidden');
-      screen3.classList.remove('hidden');
-      // reset form
-      if (charNameInput) charNameInput.value = state.playerName || '';
-      if (avatarListEl) {
-        avatarListEl.querySelectorAll('.avatar-option').forEach(btn => btn.classList.remove('selected'));
-        selectedAvatar = state.avatar || null;
-        if (selectedAvatar) {
-          // find button by emoji textContent
-          const sel = Array.from(avatarListEl.querySelectorAll('.avatar-option')).find(b => b.textContent.trim() === selectedAvatar);
-          if (sel) sel.classList.add('selected');
+      // Use the same non-blocking inline indicator when opening the creator
+      showLoading('Preparing character...', 600).then(() => {
+        screen1.classList.add('hidden');
+        screen3.classList.remove('hidden');
+        // reset form
+        if (charNameInput) charNameInput.value = state.playerName || '';
+        if (avatarListEl) {
+          avatarListEl.querySelectorAll('.avatar-option').forEach(btn => btn.classList.remove('selected'));
+          selectedAvatar = state.avatar || null;
+          if (selectedAvatar) {
+            // find button by emoji textContent
+            const sel = Array.from(avatarListEl.querySelectorAll('.avatar-option')).find(b => b.textContent.trim() === selectedAvatar);
+            if (sel) sel.classList.add('selected');
+          }
         }
-      }
+      });
     });
   }
 
