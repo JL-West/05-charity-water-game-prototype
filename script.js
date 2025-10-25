@@ -65,6 +65,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const inlineText = document.getElementById('inlineIndicatorText');
   const inlinePct = document.getElementById('inlineIndicatorPct');
   let _indicatorRaf = null;
+  // Jerrycan SVG elements (decorative). We'll update the water rect attributes directly.
+  const jerrySvg = document.getElementById('jerrySvg');
+  const jerryWater = document.getElementById('jerryWater');
+  const JERRY_TOTAL_H = 30; // matches SVG body height used in markup
+  const JERRY_TOP_Y = 6; // top offset of the water area in the SVG
+  let _jerryRaf = null;
+
+  function setJerryPercent(pct) {
+    if (!jerryWater) return;
+    const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+    const height = Math.round((clamped / 100) * JERRY_TOTAL_H);
+    const y = JERRY_TOP_Y + (JERRY_TOTAL_H - height);
+    try {
+      jerryWater.setAttribute('height', String(height));
+      jerryWater.setAttribute('y', String(y));
+    } catch (e) {
+      // ignore if attribute setting fails in some environment
+    }
+  }
+
+  function animateJerryTo(targetPct, durationMs = 180) {
+    if (!jerryWater) return;
+    if (_jerryRaf) cancelAnimationFrame(_jerryRaf);
+    const start = performance.now();
+    const currentH = parseInt(jerryWater.getAttribute('height') || '0', 10);
+    const initialPct = Math.round((currentH / JERRY_TOTAL_H) * 100);
+    function step(now) {
+      const t = Math.min(1, (now - start) / durationMs);
+      const pct = Math.round(initialPct + (targetPct - initialPct) * t);
+      setJerryPercent(pct);
+      if (t < 1) {
+        _jerryRaf = requestAnimationFrame(step);
+      }
+    }
+    _jerryRaf = requestAnimationFrame(step);
+  }
 
   function showIndicator(message = 'Loading...', durationMs = 600, taskPromise = null) {
     if (!inlineIndicator) return Promise.resolve();
@@ -81,17 +117,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return new Promise(resolve => {
       const start = performance.now();
-      function step(now) {
-        const t = Math.min(1, (now - start) / durationMs);
-        const pct = Math.round(t * 100);
-        if (inlinePct) inlinePct.textContent = pct + '%';
-        if (t < 1) {
-          _indicatorRaf = requestAnimationFrame(step);
-        } else {
-          setTimeout(() => { hideIndicator(); resolve(); }, 160);
+        function step(now) {
+          const t = Math.min(1, (now - start) / durationMs);
+          const pct = Math.round(t * 100);
+          if (inlinePct) inlinePct.textContent = pct + '%';
+          // Update decorative jerrycan to match percent
+          try { animateJerryTo(pct, 120); } catch (e) { /* ignore */ }
+          if (t < 1) {
+            _indicatorRaf = requestAnimationFrame(step);
+          } else {
+            // ensure full fill briefly before hiding
+            try { animateJerryTo(100, 120); } catch (e) {}
+            setTimeout(() => { hideIndicator(); resolve(); }, 180);
+          }
         }
-      }
-      _indicatorRaf = requestAnimationFrame(step);
+        _indicatorRaf = requestAnimationFrame(step);
     });
   }
 
@@ -107,6 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
     inlineIndicator.setAttribute('aria-hidden', 'true');
     if (inlinePct) inlinePct.textContent = '0%';
     if (_indicatorRaf) { cancelAnimationFrame(_indicatorRaf); _indicatorRaf = null; }
+    // reset jerry water to empty
+    try { setJerryPercent(0); } catch (e) {}
+    if (_jerryRaf) { cancelAnimationFrame(_jerryRaf); _jerryRaf = null; }
   }
 
   // Keep the old loader API but wire to inline indicator (returns a Promise)

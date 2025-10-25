@@ -120,6 +120,10 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 	.inline-pct { display:none; }
 }
 
+	/* Jerrycan decorative styles */
+	.jerry-svg { display:inline-block; vertical-align:middle; pointer-events:none; margin-right:6px; }
+	.jerry-svg #jerryWater { shape-rendering: crispEdges; }
+
 
 
 /* Small screens fallback (we'll focus on desktop but keep it usable) */

@@ -32,11 +32,20 @@
             </div>
             <!-- Inline, non-blocking indicator shown next to the load button -->
             <div style="display:flex;align-items:center;justify-content:center;margin-top:8px;gap:8px;">
-                <div id="inlineIndicator" class="inline-indicator hidden" role="status" aria-live="polite" aria-hidden="true">
-                    <span class="inline-spinner" aria-hidden="true"></span>
-                    <span id="inlineIndicatorText" class="inline-text">Loading...</span>
-                    <span id="inlineIndicatorPct" class="inline-pct">0%</span>
-                </div>
+                                <div id="inlineIndicator" class="inline-indicator hidden" role="status" aria-live="polite" aria-hidden="true">
+                                        <!-- decorative jerrycan SVG; fill is updated via JS (height + y) -->
+                                        <svg id="jerrySvg" class="jerry-svg" width="36" height="44" viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                                            <!-- body outline -->
+                                            <rect x="2" y="6" width="32" height="30" rx="4" fill="none" stroke="#2b3742" stroke-width="1" />
+                                            <!-- neck/handle -->
+                                            <rect x="24" y="2" width="8" height="8" rx="2" fill="#ffffff" stroke="#2b3742" stroke-width="1" />
+                                            <!-- water rect (we update height and y via JS). initial height=0 -->
+                                            <rect id="jerryWater" x="3" y="36" width="30" height="0" fill="#2ea7f7" />
+                                        </svg>
+                                        <span class="inline-spinner" aria-hidden="true"></span>
+                                        <span id="inlineIndicatorText" class="inline-text">Loading...</span>
+                                        <span id="inlineIndicatorPct" class="inline-pct">0%</span>
+                                </div>
             </div>
             <div style="margin-top:8px;">
                 <a class="btn" href="https://www.figma.com/proto/dcjWRW8CHaVQE1QV38d0yE/Adam-s-Ale?node-id=0-1&t=o031IUey9KEXQKv1-1" target="_blank" rel="noopener noreferrer">Open Figma Wireframe</a>
