@@ -61,6 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAP_ROWS = 4;
   const totalTiles = MAP_COLS * MAP_ROWS;
 
+  // Player position (grid index). Persisted in state.playerPosIndex
+  if (typeof state.playerPosIndex === 'undefined' || state.playerPosIndex === null) {
+    // default to center tile
+    state.playerPosIndex = Math.floor(totalTiles / 2);
+  }
+
   // Simple loader implementation using the small overlay added to index.html
   // Inline indicator implementation (non-blocking)
   const inlineIndicator = document.getElementById('inlineIndicator');
@@ -209,6 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let i = 0; i < totalTiles; i++) {
       const tile = document.createElement('div');
       tile.className = 'map-tile';
+      // expose coordinates for movement logic
+      const x = i % MAP_COLS;
+      const y = Math.floor(i / MAP_COLS);
+      tile.dataset.x = String(x);
+      tile.dataset.y = String(y);
       tile.dataset.index = i;
       tile.innerHTML = `<div class="tile-label">Plot ${i + 1}</div><div class="tile-item"></div>`;
       tile.addEventListener('click', () => onMapTileClick(i, tile));
@@ -218,9 +229,59 @@ document.addEventListener('DOMContentLoaded', () => {
         tile.classList.add('placed');
         tile.querySelector('.tile-item').textContent = placed.item.name;
       }
+      // If this is the player position, render the player emoji
+      if (state.playerPosIndex === i) {
+        tile.classList.add('player');
+        const span = document.createElement('span');
+        span.className = 'player-emoji';
+        span.textContent = state.avatar || '🧑';
+        tile.appendChild(span);
+      }
       mapGridEl.appendChild(tile);
     }
   }
+
+  // Move player by grid delta (dx, dy)
+  function movePlayer(dx, dy) {
+    const idx = state.playerPosIndex;
+    const x = idx % MAP_COLS;
+    const y = Math.floor(idx / MAP_COLS);
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx < 0 || nx >= MAP_COLS || ny < 0 || ny >= MAP_ROWS) return; // out of bounds
+    const newIndex = ny * MAP_COLS + nx;
+    // update DOM: remove old player element and add to new tile
+    const oldTile = mapGridEl.querySelector(`.map-tile[data-index="${idx}"]`);
+    const newTile = mapGridEl.querySelector(`.map-tile[data-index="${newIndex}"]`);
+    if (!newTile) return;
+    // remove old
+    if (oldTile) {
+      oldTile.classList.remove('player');
+      const old = oldTile.querySelector('.player-emoji');
+      if (old) old.remove();
+    }
+    // add to new
+    newTile.classList.add('player');
+    const span = document.createElement('span');
+    span.className = 'player-emoji';
+    span.textContent = state.avatar || '🧑';
+    newTile.appendChild(span);
+    state.playerPosIndex = newIndex;
+    saveState();
+  }
+
+  // Keyboard handlers for movement (arrow keys + WASD)
+  document.addEventListener('keydown', (e) => {
+    // only accept movement when game screen is visible
+    if (screen2.classList.contains('hidden')) return;
+    const key = e.key;
+    let moved = false;
+    if (key === 'ArrowLeft' || key === 'a' || key === 'A') { movePlayer(-1, 0); moved = true; }
+    if (key === 'ArrowRight' || key === 'd' || key === 'D') { movePlayer(1, 0); moved = true; }
+    if (key === 'ArrowUp' || key === 'w' || key === 'W') { movePlayer(0, -1); moved = true; }
+    if (key === 'ArrowDown' || key === 's' || key === 'S') { movePlayer(0, 1); moved = true; }
+    if (moved) e.preventDefault();
+  });
 
   function updateInventory() {
     if (!inventoryEl) return;

@@ -56,6 +56,11 @@ body { background: #f6efe6; color: #1f2937; padding: 20px; }
 .map-tile { background: #e6eef6; padding: 18px; border-radius: 6px; text-align: center; cursor: pointer; user-select: none; height: 70px; display:flex; align-items:center; justify-content:center; flex-direction:column; }
 .map-tile.placed { background: #dff6ea; border: 2px solid #34d399; }
 
+/* Player marker styles for grid-based movement */
+.map-tile.player { background: #fff3e0; outline: 2px solid rgba(14,165,164,0.12); }
+.player-emoji { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 20px; pointer-events: none; }
+.map-tile { position: relative; }
+
 /* Shop list */
 .shop-list { display: flex; flex-direction: column; gap: 8px; }
 .shop-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-radius: 6px; background: #fafafa; border: 1px solid #eef2f7; }
