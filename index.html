@@ -29,6 +29,7 @@
             <div class="intro-actions">
                 <button id="startBtn" class="btn primary">Start Mission</button>
                 <button id="loadBtn" class="btn">Continue (Load)</button>
+                <button id="createCharBtn" class="btn">Create Character</button>
             </div>
             <!-- Inline, non-blocking indicator shown next to the load button -->
             <div style="display:flex;align-items:center;justify-content:center;margin-top:8px;gap:8px;">
@@ -51,6 +52,32 @@
                 <a class="btn" href="https://www.figma.com/proto/dcjWRW8CHaVQE1QV38d0yE/Adam-s-Ale?node-id=0-1&t=o031IUey9KEXQKv1-1" target="_blank" rel="noopener noreferrer">Open Figma Wireframe</a>
             </div>
             <p class="small">This prototype uses simple HTML/CSS/JS so students can learn DOM programming.</p>
+        </div>
+    </div>
+
+    <!-- Third screen: Character creator (simple form) -->
+    <div id="screen-3" class="app-screen hidden screen-center">
+        <div class="card intro-card" style="width:480px;">
+            <h2>Create Your Character</h2>
+            <p class="lead">Choose a name and avatar for your character.</p>
+            <div style="margin:10px 0; display:flex; gap:12px; align-items:center;">
+                <label for="charName" style="min-width:80px;">Name</label>
+                <input id="charName" type="text" placeholder="Enter name" style="flex:1; padding:8px; border-radius:6px; border:1px solid #e6eef6;" />
+            </div>
+            <div style="margin:8px 0;">
+                <h4 style="margin:6px 0;">Choose avatar</h4>
+                <div id="avatarList" style="display:flex;gap:8px;align-items:center;">
+                    <button class="avatar-option" data-avatar="avatar-1">👩</button>
+                    <button class="avatar-option" data-avatar="avatar-2">🧑</button>
+                    <button class="avatar-option" data-avatar="avatar-3">🧑‍🌾</button>
+                    <button class="avatar-option" data-avatar="avatar-4">🧕</button>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+                <button id="saveCharBtn" class="btn primary">Save Character</button>
+                <button id="cancelCharBtn" class="btn">Cancel</button>
+            </div>
+            <p class="small">This is a minimal character creator for the prototype.</p>
         </div>
     </div>
 

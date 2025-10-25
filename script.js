@@ -315,6 +315,76 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // startBtn handler attached
 
+  // Character creator wiring
+  const createCharBtn = document.getElementById('createCharBtn');
+  const screen3 = document.getElementById('screen-3');
+  const charNameInput = document.getElementById('charName');
+  const avatarListEl = document.getElementById('avatarList');
+  const saveCharBtn = document.getElementById('saveCharBtn');
+  const cancelCharBtn = document.getElementById('cancelCharBtn');
+  let selectedAvatar = null;
+
+  if (createCharBtn) {
+    createCharBtn.addEventListener('click', () => {
+      screen1.classList.add('hidden');
+      screen3.classList.remove('hidden');
+      // reset form
+      if (charNameInput) charNameInput.value = state.playerName || '';
+      if (avatarListEl) {
+        avatarListEl.querySelectorAll('.avatar-option').forEach(btn => btn.classList.remove('selected'));
+        selectedAvatar = state.avatar || null;
+        if (selectedAvatar) {
+          const sel = avatarListEl.querySelector(`[data-avatar="${selectedAvatar}"]`);
+          if (sel) sel.classList.add('selected');
+        }
+      }
+    });
+  }
+
+  if (avatarListEl) {
+    avatarListEl.addEventListener('click', (e) => {
+      const btn = e.target.closest && e.target.closest('.avatar-option');
+      if (!btn) return;
+      avatarListEl.querySelectorAll('.avatar-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAvatar = btn.getAttribute('data-avatar');
+    });
+  }
+
+  if (cancelCharBtn) {
+    cancelCharBtn.addEventListener('click', () => {
+      screen3.classList.add('hidden');
+      screen1.classList.remove('hidden');
+    });
+  }
+
+  if (saveCharBtn) {
+    saveCharBtn.addEventListener('click', () => {
+      const name = charNameInput ? charNameInput.value.trim() : '';
+      if (!name) {
+        alert('Please enter a name for your character.');
+        return;
+      }
+      // Use the same non-blocking indicator while saving/creating
+      showLoading('Creating character...', 800).then(() => {
+        state.playerName = name;
+        if (selectedAvatar) state.avatar = selectedAvatar;
+        saveState();
+        // Update player name in HUD if present
+        const playerNameEl = document.getElementById('playerName');
+        if (playerNameEl) playerNameEl.textContent = state.playerName;
+        // Move to game screen
+        screen3.classList.add('hidden');
+        screen2.classList.remove('hidden');
+        renderShop();
+        renderMap();
+        updateInventory();
+        updateHUD();
+        statusTextEl.textContent = 'Welcome, ' + state.playerName + '! Select an item from the shop.';
+      });
+    });
+  }
+
   loadBtn.addEventListener('click', () => {
   // loadBtn clicked
     // Show loading overlay and wait for the fill+finish to complete before hiding

@@ -124,6 +124,10 @@ body { background: #f5f7fb; color: #1f2937; padding: 20px; }
 	.jerry-svg { display:inline-block; vertical-align:middle; pointer-events:none; margin-right:6px; }
 	.jerry-svg #jerryWater { shape-rendering: crispEdges; }
 
+	/* Character creator styles */
+	.avatar-option { background: white; border: 1px solid #eef2f7; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 20px; }
+	.avatar-option.selected { box-shadow: 0 0 0 2px rgba(14,165,164,0.14); }
+
 
 
 /* Small screens fallback (we'll focus on desktop but keep it usable) */
