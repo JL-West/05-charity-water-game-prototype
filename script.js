@@ -51,9 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Shop items (medieval-themed names; effects keep the same shape for the prototype)
   const shopItems = [
-    { id: 'waterskin', name: 'Waterskin', cost: 10, effect: { water: 5 } },
-    { id: 'handaxe', name: 'Hand Axe', cost: 40, effect: { water: 20 } },
-    { id: 'rope', name: 'Rope', cost: 15, effect: { water: 0 } },
+    { id: 'waterskin', name: "Waterskin (Leather)", cost: 8, effect: { water: 5 } },
+    { id: 'handaxe', name: "Peasant's Handaxe", cost: 35, effect: { water: 18 } },
+    { id: 'rope', name: 'Braided Rope', cost: 12, effect: { water: 0 } },
   ];
 
   // Map dimensions
@@ -73,6 +73,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof state.playerPosIndex === 'undefined' || state.playerPosIndex === null) {
     // default to center tile
     state.playerPosIndex = Math.floor(totalTiles / 2);
+  }
+
+  // Quest NPC: a single NPC tile index and availability flag
+  if (typeof state.questNpcIndex === 'undefined' || state.questNpcIndex === null) {
+    // place NPC near the top-left for accessibility
+    state.questNpcIndex = 1;
+  }
+  if (typeof state.questAvailable === 'undefined' || state.questAvailable === null) {
+    state.questAvailable = true;
   }
 
   // Simple loader implementation using the small overlay added to index.html
@@ -273,6 +282,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // center camera on player
     centerCameraOn(state.playerPosIndex);
+
+    // Render NPC entity
+    renderNpc();
+  }
+
+  function renderNpc() {
+    if (!worldInner) return;
+    // remove previous npc if any
+    let npc = worldInner.querySelector('.npc-entity');
+    if (!npc) {
+      npc = document.createElement('div');
+      npc.className = 'npc-entity';
+      npc.setAttribute('aria-hidden', 'true');
+      const badge = document.createElement('div');
+      badge.className = 'npc-indicator';
+      npc.appendChild(badge);
+      worldInner.appendChild(npc);
+    }
+    const idx = state.questNpcIndex;
+    const nx = idx % MAP_COLS;
+    const ny = Math.floor(idx / MAP_COLS);
+    npc.style.left = `${nx * TILE_W + TILE_W / 2 - 18}px`;
+    npc.style.top = `${ny * TILE_H + TILE_H / 2 - 18}px`;
+    // show or hide indicator
+    const badge = npc.querySelector('.npc-indicator');
+    if (state.questAvailable) {
+      badge.textContent = '❗';
+      npc.classList.remove('quest-complete');
+    } else {
+      badge.textContent = '✓';
+      npc.classList.add('quest-complete');
+    }
   }
 
   function centerCameraOn(index) {
@@ -297,6 +338,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const ny = y + dy;
     if (nx < 0 || nx >= MAP_COLS || ny < 0 || ny >= MAP_ROWS) return; // out of bounds
     const newIndex = ny * MAP_COLS + nx;
+    // If target tile has a placed item, interact instead of moving
+    const occupied = state.placedItems.find(p => p.index === newIndex);
+    if (occupied) {
+      interactWithTile(newIndex);
+      return;
+    }
     // update state
     state.playerPosIndex = newIndex;
     // animate player element position
@@ -305,10 +352,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const top = ny * TILE_H + TILE_H / 2 - 23;
       playerEl.style.left = `${left}px`;
       playerEl.style.top = `${top}px`;
+      // small stepping pop
+      playerEl.classList.add('stepping');
+      setTimeout(() => playerEl && playerEl.classList.remove('stepping'), 220);
     }
     // center camera smoothly
     centerCameraOn(newIndex);
     saveState();
+  }
+
+  function interactWithTile(index) {
+    const placed = state.placedItems.find(p => p.index === index);
+    if (!placed) return;
+    // brief interaction: show message and highlight the tile
+    const tile = worldInner.querySelector(`.map-tile[data-index="${index}"]`);
+    statusTextEl.textContent = `This plot has ${placed.item.name}. You can't walk onto it. Use it or remove it.`;
+    if (tile) {
+      tile.style.transition = 'box-shadow 180ms ease';
+      const old = tile.style.boxShadow;
+      tile.style.boxShadow = '0 0 0 4px rgba(244,180,0,0.18)';
+      setTimeout(() => { if (tile) tile.style.boxShadow = old; }, 420);
+    }
   }
 
   // Keyboard handlers for movement (arrow keys + WASD)
@@ -378,6 +442,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // Deliver water logic
   if (deliverBtn) {
     deliverBtn.addEventListener('click', () => {
+      // If player is at NPC and a quest is available, complete the quest
+      if (state.playerPosIndex === state.questNpcIndex && state.questAvailable) {
+        // Quest reward
+        const questWater = 20;
+        const questGold = 50;
+        state.waterDelivered += questWater;
+        state.funds += questGold;
+        state.questAvailable = false;
+        updateHUD();
+        saveState();
+        renderNpc();
+        statusTextEl.textContent = `Quest complete! You delivered ${questWater} aid and earned ${questGold} gold.`;
+        checkAchievements();
+        return;
+      }
+
+      // Otherwise perform a normal delivery from placed items
       let gained = 0;
       state.placedItems.forEach(p => {
         gained += (p.item.effect && p.item.effect.water) || 0;
@@ -388,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.funds += reward;
       updateHUD();
       saveState();
-      statusTextEl.textContent = `Delivered ${gained} supplies to the hamlet. Earned $${reward}.`;
+      statusTextEl.textContent = `Delivered ${gained} supplies to the hamlet. Earned ${reward} gold.`;
       checkAchievements();
     });
   }
