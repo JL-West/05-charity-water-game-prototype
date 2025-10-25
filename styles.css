@@ -51,10 +51,45 @@ body { background: #f6efe6; color: #1f2937; padding: 20px; }
 .wireframe-preview { display:flex; align-items:center; justify-content:center; }
 .wireframe-preview img, .wireframe-preview .wireframe-placeholder { max-width:100%; height:auto; }
 
-/* Map grid */
-.map-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 8px; }
-.map-tile { background: #e6eef6; padding: 18px; border-radius: 6px; text-align: center; cursor: pointer; user-select: none; height: 70px; display:flex; align-items:center; justify-content:center; flex-direction:column; }
-.map-tile.placed { background: #dff6ea; border: 2px solid #34d399; }
+/* World viewport (replaces strict grid visuals with an immersive world) */
+.map-grid, .world {
+	/* world/viewport: fixed height with hidden overflow; JS will size the inner world */
+	position: relative;
+	overflow: hidden;
+	width: 100%;
+	height: 420px;
+	margin-top: 8px;
+	background: linear-gradient(180deg, #eaf6ff 0%, #f6fbf9 60%);
+	border-radius: 8px;
+}
+
+/* Inside the world we place absolute tiles and a floating player element. JS sets .world-inner width/height to match the virtual world size. */
+.world-inner { position: absolute; left: 0; top: 0; will-change: transform; transition: transform 240ms cubic-bezier(.2,.9,.2,1); }
+.map-tile {
+	position: absolute;
+	width: 140px;
+	height: 90px;
+	background: linear-gradient(180deg, #ffffff 0%, #e6eef6 100%);
+	padding: 8px;
+	border-radius: 10px;
+	text-align: center;
+	cursor: pointer;
+	user-select: none;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	flex-direction:column;
+	box-shadow: 0 6px 14px rgba(12, 18, 31, 0.06);
+}
+.map-tile.placed { background: linear-gradient(180deg,#f0fff4,#dff6ea); border: 2px solid #34d399; }
+
+/* Player marker styles for immersive movement */
+.player-entity { position: absolute; width: 46px; height: 46px; border-radius: 10px; display:flex; align-items:center; justify-content:center; font-size:22px; background: rgba(255,255,255,0.95); box-shadow: 0 8px 18px rgba(2,6,23,0.12); transition: left 180ms linear, top 180ms linear, transform 180ms cubic-bezier(.2,.9,.2,1); pointer-events: none; }
+.map-tile.player { background: rgba(255,243,224,0.85); outline: 2px solid rgba(14,165,164,0.12); }
+
+/* keep tile inner elements tidy */
+.map-tile .tile-label { font-size: 0.85rem; color: #0f172a; }
+.map-tile .tile-item { font-size: 0.78rem; color: #065f46; margin-top:6px; }
 
 /* Player marker styles for grid-based movement */
 .map-tile.player { background: #fff3e0; outline: 2px solid rgba(14,165,164,0.12); }

@@ -61,6 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAP_ROWS = 4;
   const totalTiles = MAP_COLS * MAP_ROWS;
 
+  // Tile pixel size used for the immersive world
+  const TILE_W = 140;
+  const TILE_H = 90;
+
+  // World DOM pieces that will be created/managed by renderMap
+  let worldInner = null;
+  let playerEl = null;
+
   // Player position (grid index). Persisted in state.playerPosIndex
   if (typeof state.playerPosIndex === 'undefined' || state.playerPosIndex === null) {
     // default to center tile
@@ -211,34 +219,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderMap() {
     if (!mapGridEl) return;
+    // create the inner world container (big virtual map)
     mapGridEl.innerHTML = '';
+    worldInner = document.createElement('div');
+    worldInner.className = 'world-inner';
+    // size the world according to tile counts
+    worldInner.style.width = `${MAP_COLS * TILE_W}px`;
+    worldInner.style.height = `${MAP_ROWS * TILE_H}px`;
+
     for (let i = 0; i < totalTiles; i++) {
-      const tile = document.createElement('div');
-      tile.className = 'map-tile';
-      // expose coordinates for movement logic
       const x = i % MAP_COLS;
       const y = Math.floor(i / MAP_COLS);
+      const tile = document.createElement('div');
+      tile.className = 'map-tile';
       tile.dataset.x = String(x);
       tile.dataset.y = String(y);
       tile.dataset.index = i;
+      tile.style.left = `${x * TILE_W + 12}px`;
+      tile.style.top = `${y * TILE_H + 12}px`;
+      tile.style.width = `${TILE_W - 24}px`;
+      tile.style.height = `${TILE_H - 24}px`;
       tile.innerHTML = `<div class="tile-label">Plot ${i + 1}</div><div class="tile-item"></div>`;
       tile.addEventListener('click', () => onMapTileClick(i, tile));
-      // If there's a placed item in saved state, show it
       const placed = state.placedItems.find(p => p.index === i);
       if (placed) {
         tile.classList.add('placed');
         tile.querySelector('.tile-item').textContent = placed.item.name;
       }
-      // If this is the player position, render the player emoji
-      if (state.playerPosIndex === i) {
-        tile.classList.add('player');
-        const span = document.createElement('span');
-        span.className = 'player-emoji';
-        span.textContent = state.avatar || '🧑';
-        tile.appendChild(span);
-      }
-      mapGridEl.appendChild(tile);
+      worldInner.appendChild(tile);
     }
+
+    // add worldInner to the viewport
+    mapGridEl.appendChild(worldInner);
+
+    // create or update player element
+    if (!playerEl) {
+      playerEl = document.createElement('div');
+      playerEl.className = 'player-entity';
+      playerEl.id = 'playerEntity';
+      playerEl.textContent = state.avatar || '🧑';
+      // append to worldInner so it moves with the world transform
+      worldInner.appendChild(playerEl);
+    } else {
+      playerEl.textContent = state.avatar || '🧑';
+      if (!worldInner.contains(playerEl)) worldInner.appendChild(playerEl);
+    }
+
+    // Place the player at the saved index
+    const px = state.playerPosIndex % MAP_COLS;
+    const py = Math.floor(state.playerPosIndex / MAP_COLS);
+    playerEl.style.left = `${px * TILE_W + TILE_W / 2 - 23}px`;
+    playerEl.style.top = `${py * TILE_H + TILE_H / 2 - 23}px`;
+
+    // center camera on player
+    centerCameraOn(state.playerPosIndex);
+  }
+
+  function centerCameraOn(index) {
+    if (!worldInner || !mapGridEl) return;
+    const viewW = mapGridEl.clientWidth;
+    const viewH = mapGridEl.clientHeight;
+    const px = index % MAP_COLS;
+    const py = Math.floor(index / MAP_COLS);
+    const playerCenterX = px * TILE_W + TILE_W / 2;
+    const playerCenterY = py * TILE_H + TILE_H / 2;
+    const tx = Math.max(0, Math.min(playerCenterX - viewW / 2, worldInner.clientWidth - viewW));
+    const ty = Math.max(0, Math.min(playerCenterY - viewH / 2, worldInner.clientHeight - viewH));
+    worldInner.style.transform = `translate(${-tx}px, ${-ty}px)`;
   }
 
   // Move player by grid delta (dx, dy)
@@ -250,23 +297,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const ny = y + dy;
     if (nx < 0 || nx >= MAP_COLS || ny < 0 || ny >= MAP_ROWS) return; // out of bounds
     const newIndex = ny * MAP_COLS + nx;
-    // update DOM: remove old player element and add to new tile
-    const oldTile = mapGridEl.querySelector(`.map-tile[data-index="${idx}"]`);
-    const newTile = mapGridEl.querySelector(`.map-tile[data-index="${newIndex}"]`);
-    if (!newTile) return;
-    // remove old
-    if (oldTile) {
-      oldTile.classList.remove('player');
-      const old = oldTile.querySelector('.player-emoji');
-      if (old) old.remove();
-    }
-    // add to new
-    newTile.classList.add('player');
-    const span = document.createElement('span');
-    span.className = 'player-emoji';
-    span.textContent = state.avatar || '🧑';
-    newTile.appendChild(span);
+    // update state
     state.playerPosIndex = newIndex;
+    // animate player element position
+    if (playerEl) {
+      const left = nx * TILE_W + TILE_W / 2 - 23;
+      const top = ny * TILE_H + TILE_H / 2 - 23;
+      playerEl.style.left = `${left}px`;
+      playerEl.style.top = `${top}px`;
+    }
+    // center camera smoothly
+    centerCameraOn(newIndex);
     saveState();
   }
 
