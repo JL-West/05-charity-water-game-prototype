@@ -132,6 +132,35 @@ h1, h2, h3, .card h3 { font-family: 'Uncial Antiqua', Georgia, serif; letter-spa
 	100% { transform: scale(1) translateY(0) rotate(0); opacity: 1; }
 }
 
+/* Backgrounds and themed overlays */
+/* Main menu: nature photo (charity:water feel). Place your hero image at img/nature-hero.jpg */
+#screen-1 {
+	background-image: linear-gradient(rgba(6,21,34,0.28), rgba(6,21,34,0.08)), url('img/nature-hero.jpg');
+	background-size: cover;
+	background-position: center center;
+	border-radius: 10px;
+}
+
+/* Center content in main screen with an overlay panel effect */
+#screen-1 .intro-card { background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.82)); box-shadow: 0 8px 30px rgba(2,6,23,0.18); }
+
+/* Map background: natural terrain photo used behind the world viewport. Place at img/nature-map.jpg */
+.map-grid, .world { background-image: linear-gradient(rgba(255,255,255,0.0), rgba(255,255,255,0.0)), url('img/nature-map.jpg'); background-size: cover; background-position: center; }
+
+/* Add a soft vignette to the map area for readability */
+.game-area.card { position: relative; overflow: visible; }
+.game-area.card::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(255,255,255,0.0) 40%, rgba(8,16,30,0.08) 100%); border-radius: 8px; }
+
+/* Character creator: bedchamber theme (medieval). Place your image at img/medieval-room.jpg */
+#screen-3 { background-image: linear-gradient(rgba(6,9,12,0.24), rgba(6,9,12,0.12)), url('img/medieval-room.jpg'); background-size: cover; background-position: center; }
+#screen-3 .intro-card { background: linear-gradient(180deg, rgba(255,250,240,0.95), rgba(255,250,240,0.88)); box-shadow: 0 8px 30px rgba(2,6,23,0.18); }
+
+/* Fallbacks when images are missing: use themed gradients */
+/* No-op supports fallback removed (kept gradients and overlays as readable fallbacks). */
+
+/* Utility: dim images for better contrast when needed */
+.bg-dim::before { content: ''; position:absolute; inset:0; background: rgba(6,21,34,0.2); border-radius:inherit; pointer-events:none; }
+
 /* Make NPC clickable and more noticeable */
 .npc-entity { pointer-events: auto; cursor: pointer; }
 
