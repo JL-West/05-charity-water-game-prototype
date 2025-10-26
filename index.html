@@ -26,8 +26,8 @@
                     <text x="20" y="40" fill="#6b7280" font-size="12">Intro wireframe (drop your PNG as <tspan font-weight="bold">img/wireframe.png</tspan>)</text>
                 </svg>
             </div>
-            <div class="intro-actions">
-                <button id="startBtn" class="btn primary">Start Quest</button>
+                <div class="intro-actions">
+                <button id="startBtn" class="btn primary">Restart</button>
                 <button id="loadBtn" class="btn">Continue (Load)</button>
                 <button id="createCharBtn" class="btn">Create Character</button>
             </div>
@@ -106,7 +106,7 @@
                 <section class="mission card">
                 <h3>Quest</h3>
                     <p>Prepare supplies and help the nearby hamlet — undertake quests and bring aid.</p>
-                    <button id="startMission" class="btn primary">Start Quest</button>
+                    <button id="startMission" class="btn primary">Restart</button>
                 </section>
             </aside>
 
@@ -159,6 +159,20 @@
                 <button id="npcCloseBtn" class="btn" style="position:absolute;top:8px;right:8px;">Close</button>
             </div>
         </div>
+
+            <!-- Confirm Reset Dialog -->
+            <div id="confirmResetDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirmResetTitle">
+                <div class="modal-backdrop"></div>
+                <div class="modal-content">
+                    <h3 id="confirmResetTitle">Restart Game</h3>
+                    <p id="confirmResetText">Are you sure you want to clear progress?</p>
+                    <label style="display:flex;align-items:center;gap:8px;margin-top:8px;"><input id="wipeCharacterCheckbox" type="checkbox"> Also remove character (name & avatar)</label>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+                        <button id="resetCancelBtn" class="btn">Cancel</button>
+                        <button id="resetConfirmBtn" class="btn primary">Confirm</button>
+                    </div>
+                </div>
+            </div>
 
         <script src="script.js"></script>
 </body>

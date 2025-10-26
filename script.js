@@ -222,6 +222,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Reset game progress. If wipeCharacter is true, also remove saved name/avatar.
+  // Respawn player to default and play a small respawn animation.
+  function resetGame(wipeCharacter = false) {
+    const keepName = (!wipeCharacter && state.playerName) ? state.playerName : null;
+    const keepAvatar = (!wipeCharacter && state.avatar) ? state.avatar : null;
+    // Reset fields to defaults
+    state.funds = 100;
+    state.waterDelivered = 0;
+    state.selectedTool = null;
+    state.placedItems = [];
+    state.missionActive = false;
+    state.missionTimeLeft = 0;
+    state.achievements = [];
+    // Reset quest state
+    state.questAvailable = true;
+    state.questAccepted = false;
+    // Reset player pos to center
+    state.playerPosIndex = Math.floor(totalTiles / 2);
+    // restore character if requested to keep
+    if (keepName) state.playerName = keepName; else delete state.playerName;
+    if (keepAvatar) state.avatar = keepAvatar; else delete state.avatar;
+    saveState();
+    // Re-render UI
+    renderShop();
+    renderMap();
+    updateInventory();
+    updateHUD();
+    // close any open dialogs
+    try { hideNpcDialog(); } catch (e) {}
+    if (statusTextEl) statusTextEl.textContent = 'Progress cleared. Player respawned.';
+    // Play respawn animation on the player element if available
+    try {
+      if (playerEl) {
+        playerEl.classList.remove('respawn');
+        // trigger reflow then add
+        // eslint-disable-next-line no-unused-expressions
+        void playerEl.offsetWidth;
+        playerEl.classList.add('respawn');
+        // remove class after animation completes
+        setTimeout(() => { if (playerEl) playerEl.classList.remove('respawn'); }, 700);
+      }
+    } catch (e) {
+      // ignore animation errors
+    }
+  }
+
   function updateHUD() {
     fundsEl.textContent = state.funds;
     waterEl.textContent = state.waterDelivered;
@@ -364,6 +410,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const npcAcceptBtn = document.getElementById('npcAcceptBtn');
   const npcDeclineBtn = document.getElementById('npcDeclineBtn');
   const npcCloseBtn = document.getElementById('npcCloseBtn');
+  // Reset confirmation dialog elements
+  const confirmResetDialog = document.getElementById('confirmResetDialog');
+  const wipeCharacterCheckbox = document.getElementById('wipeCharacterCheckbox');
+  const resetCancelBtn = document.getElementById('resetCancelBtn');
+  const resetConfirmBtn = document.getElementById('resetConfirmBtn');
 
   function showNpcDialog() {
     if (!npcDialog) return;
@@ -402,6 +453,37 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (npcCloseBtn) {
     npcCloseBtn.addEventListener('click', () => hideNpcDialog());
+  }
+
+  // Show the confirm-reset modal and return a Promise resolving to {confirmed, wipe}
+  function showConfirmReset() {
+    return new Promise(resolve => {
+      if (!confirmResetDialog) return resolve({ confirmed: false, wipe: false });
+      // reset checkbox
+      if (wipeCharacterCheckbox) wipeCharacterCheckbox.checked = false;
+      confirmResetDialog.classList.remove('hidden');
+      confirmResetDialog.setAttribute('aria-hidden', 'false');
+
+      function cleanup() {
+        confirmResetDialog.classList.add('hidden');
+        confirmResetDialog.setAttribute('aria-hidden', 'true');
+        resetConfirmBtn && resetConfirmBtn.removeEventListener('click', onConfirm);
+        resetCancelBtn && resetCancelBtn.removeEventListener('click', onCancel);
+      }
+
+      function onConfirm() {
+        const wipe = !!(wipeCharacterCheckbox && wipeCharacterCheckbox.checked);
+        cleanup();
+        resolve({ confirmed: true, wipe });
+      }
+      function onCancel() {
+        cleanup();
+        resolve({ confirmed: false, wipe: false });
+      }
+
+      resetConfirmBtn && resetConfirmBtn.addEventListener('click', onConfirm);
+      resetCancelBtn && resetCancelBtn.addEventListener('click', onCancel);
+    });
   }
 
   function centerCameraOn(index) {
@@ -624,19 +706,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Screen transitions
   startBtn.addEventListener('click', () => {
-    // Show a brief non-blocking inline indicator while we initialize the mission
-  showLoading('Starting quest...', 800).then(() => {
-      // Basic start: show screen2 and initialize components
-      screen1.classList.add('hidden');
-      screen2.classList.remove('hidden');
-      // Re-render UI elements
-      renderShop();
-      renderMap();
-      updateInventory();
-      updateHUD();
-      // Ensure any loader overlays/indicators are hidden when starting
-      try { hideLoading(); } catch (e) {}
-  statusTextEl.textContent = 'Quest started. Select an item from the shop.';
+    // Ask for confirmation before resetting progress
+    showConfirmReset().then(({ confirmed, wipe }) => {
+      if (!confirmed) return;
+      showLoading('Restarting...', 700).then(() => {
+        resetGame(!!wipe);
+        screen1.classList.add('hidden');
+        screen2.classList.remove('hidden');
+        try { hideLoading(); } catch (e) {}
+        statusTextEl.textContent = 'Quest restarted. Player respawned.';
+      });
     });
   });
   // startBtn handler attached
@@ -742,6 +821,24 @@ document.addEventListener('DOMContentLoaded', () => {
     statusTextEl.textContent = 'Returned to the main menu.';
   });
   // backBtn handler attached
+
+  // Restart button in the mission panel should also reset progress and respawn
+  const startMissionBtn = document.getElementById('startMission');
+  if (startMissionBtn) {
+    startMissionBtn.addEventListener('click', () => {
+      showConfirmReset().then(({ confirmed, wipe }) => {
+        if (!confirmed) return;
+        showLoading('Restarting...', 600).then(() => {
+          resetGame(!!wipe);
+          // ensure we are showing the game screen
+          screen1.classList.add('hidden');
+          screen2.classList.remove('hidden');
+          try { hideLoading(); } catch (e) {}
+          statusTextEl.textContent = 'Quest restarted. Player respawned.';
+        });
+      });
+    });
+  }
 
   // Help button exists in markup; attach listener if present
   const helpBtn = document.getElementById('helpBtn');
