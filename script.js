@@ -68,6 +68,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // World DOM pieces that will be created/managed by renderMap
   let worldInner = null;
   let playerEl = null;
+  // camera state for smooth tweening
+  let cameraX = 0;
+  let cameraY = 0;
+  // animation handles so we can cancel
+  let _playerAnim = null;
+  let _cameraAnim = null;
+
+  // Simple rAF tween utility (returns a promise)
+  function tween({ from, to, duration = 240, ease = t => (--t)*t*t+1, onUpdate }) {
+    return new Promise(resolve => {
+      const start = performance.now();
+      function frame(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const v = ease(t);
+        const current = from + (to - from) * v;
+        if (onUpdate) onUpdate(current);
+        if (t < 1) {
+          const id = requestAnimationFrame(frame);
+          // store last id to allow cancellation if needed
+          _playerAnim = id;
+        } else {
+          _playerAnim = null;
+          resolve();
+        }
+      }
+      frame(start);
+    });
+  }
 
   // Player position (grid index). Persisted in state.playerPosIndex
   if (typeof state.playerPosIndex === 'undefined' || state.playerPosIndex === null) {
@@ -261,27 +289,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // add worldInner to the viewport
     mapGridEl.appendChild(worldInner);
 
-    // create or update player element
+    // create or update player element (use inline SVG sprite for a medieval look)
     if (!playerEl) {
       playerEl = document.createElement('div');
       playerEl.className = 'player-entity';
       playerEl.id = 'playerEntity';
-      playerEl.textContent = state.avatar || '🧑';
-      // append to worldInner so it moves with the world transform
+      // simple medieval tunic SVG as a tiny sprite
+      playerEl.innerHTML = `
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g fill="none" fill-rule="evenodd">
+            <path d="M6 8c0 3 6 6 6 6s6-3 6-6v-3l-3-2-3 1-3-1-3 2v3z" fill="#f97316"/>
+            <circle cx="12" cy="4" r="2" fill="#fde68a"/>
+            <path d="M8 14c0 1.5 4 3 4 3s4-1.5 4-3v4H8v-4z" fill="#fff" opacity="0.9"/>
+          </g>
+        </svg>`;
       worldInner.appendChild(playerEl);
     } else {
-      playerEl.textContent = state.avatar || '🧑';
       if (!worldInner.contains(playerEl)) worldInner.appendChild(playerEl);
     }
 
     // Place the player at the saved index
     const px = state.playerPosIndex % MAP_COLS;
     const py = Math.floor(state.playerPosIndex / MAP_COLS);
-    playerEl.style.left = `${px * TILE_W + TILE_W / 2 - 23}px`;
-    playerEl.style.top = `${py * TILE_H + TILE_H / 2 - 23}px`;
-
-    // center camera on player
-    centerCameraOn(state.playerPosIndex);
+  // position immediately on first render
+  const startLeft = px * TILE_W + TILE_W / 2 - 23;
+  const startTop = py * TILE_H + TILE_H / 2 - 23;
+  playerEl.style.left = `${startLeft}px`;
+  playerEl.style.top = `${startTop}px`;
+  cameraX = 0; cameraY = 0;
+  centerCameraOn(state.playerPosIndex, /*animate=*/false);
 
     // Render NPC entity
     renderNpc();
@@ -299,6 +335,10 @@ document.addEventListener('DOMContentLoaded', () => {
       badge.className = 'npc-indicator';
       npc.appendChild(badge);
       worldInner.appendChild(npc);
+      // clicking the NPC opens the dialog
+      npc.addEventListener('click', () => {
+        if (state.questAvailable) showNpcDialog();
+      });
     }
     const idx = state.questNpcIndex;
     const nx = idx % MAP_COLS;
@@ -310,10 +350,58 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.questAvailable) {
       badge.textContent = '❗';
       npc.classList.remove('quest-complete');
+      badge.title = 'Quest available';
     } else {
       badge.textContent = '✓';
       npc.classList.add('quest-complete');
+      badge.title = 'Quest completed';
     }
+  }
+
+  // NPC dialog handlers
+  const npcDialog = document.getElementById('npcDialog');
+  const npcDialogText = document.getElementById('npcDialogText');
+  const npcAcceptBtn = document.getElementById('npcAcceptBtn');
+  const npcDeclineBtn = document.getElementById('npcDeclineBtn');
+  const npcCloseBtn = document.getElementById('npcCloseBtn');
+
+  function showNpcDialog() {
+    if (!npcDialog) return;
+    npcDialog.classList.remove('hidden');
+    npcDialog.setAttribute('aria-hidden', 'false');
+    if (state.questAccepted) {
+      npcDialogText.textContent = 'You have already accepted this quest. Return to the villager to hand it in.';
+      npcAcceptBtn.textContent = 'Okay';
+    } else {
+      npcDialogText.textContent = 'A villager asks for aid. Accept the quest to receive a reward for returning supplies.';
+      npcAcceptBtn.textContent = 'Accept Quest';
+    }
+  }
+
+  function hideNpcDialog() {
+    if (!npcDialog) return;
+    npcDialog.classList.add('hidden');
+    npcDialog.setAttribute('aria-hidden', 'true');
+  }
+
+  if (npcAcceptBtn) {
+    npcAcceptBtn.addEventListener('click', () => {
+      if (!state.questAccepted) {
+        state.questAccepted = true;
+        saveState();
+        statusTextEl.textContent = 'Quest accepted: bring aid to the villager.';
+      }
+      hideNpcDialog();
+    });
+  }
+  if (npcDeclineBtn) {
+    npcDeclineBtn.addEventListener('click', () => {
+      statusTextEl.textContent = 'You declined the villager. You can accept later.';
+      hideNpcDialog();
+    });
+  }
+  if (npcCloseBtn) {
+    npcCloseBtn.addEventListener('click', () => hideNpcDialog());
   }
 
   function centerCameraOn(index) {
@@ -321,12 +409,48 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewW = mapGridEl.clientWidth;
     const viewH = mapGridEl.clientHeight;
     const px = index % MAP_COLS;
-    const py = Math.floor(index / MAP_COLS);
+    const py = Math.floor(index / MAP_ROWS);
     const playerCenterX = px * TILE_W + TILE_W / 2;
     const playerCenterY = py * TILE_H + TILE_H / 2;
     const tx = Math.max(0, Math.min(playerCenterX - viewW / 2, worldInner.clientWidth - viewW));
     const ty = Math.max(0, Math.min(playerCenterY - viewH / 2, worldInner.clientHeight - viewH));
-    worldInner.style.transform = `translate(${-tx}px, ${-ty}px)`;
+    // animate camera using rAF for smooth movement
+    animateCameraTo(tx, ty);
+  }
+
+  function animateCameraTo(targetX, targetY, duration = 320) {
+    if (!_cameraAnim && typeof worldInner.style.transform === 'string') {
+      // parse current translate
+      const m = worldInner.style.transform.match(/translate\((-?\d+(?:\.\d+)?)px,\s*(-?\d+(?:\.\d+)?)px\)/);
+      if (m) {
+        cameraX = -parseFloat(m[1]);
+        cameraY = -parseFloat(m[2]);
+      } else {
+        cameraX = cameraX || 0;
+        cameraY = cameraY || 0;
+      }
+    }
+    if (_cameraAnim) cancelAnimationFrame(_cameraAnim);
+    const startX = cameraX;
+    const startY = cameraY;
+    const start = performance.now();
+    return new Promise(resolve => {
+      function step(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const easeT = (--t) * t * t + 1; // easeOut
+        const curX = startX + (targetX - startX) * easeT;
+        const curY = startY + (targetY - startY) * easeT;
+        cameraX = curX; cameraY = curY;
+        worldInner.style.transform = `translate(${-curX}px, ${-curY}px)`;
+        if (t < 1) {
+          _cameraAnim = requestAnimationFrame(step);
+        } else {
+          _cameraAnim = null;
+          resolve();
+        }
+      }
+      _cameraAnim = requestAnimationFrame(step);
+    });
   }
 
   // Move player by grid delta (dx, dy)
@@ -344,21 +468,28 @@ document.addEventListener('DOMContentLoaded', () => {
       interactWithTile(newIndex);
       return;
     }
-    // update state
+    // update state immediately so other logic can read it
     state.playerPosIndex = newIndex;
-    // animate player element position
-    if (playerEl) {
-      const left = nx * TILE_W + TILE_W / 2 - 23;
-      const top = ny * TILE_H + TILE_H / 2 - 23;
-      playerEl.style.left = `${left}px`;
-      playerEl.style.top = `${top}px`;
-      // small stepping pop
-      playerEl.classList.add('stepping');
-      setTimeout(() => playerEl && playerEl.classList.remove('stepping'), 220);
-    }
-    // center camera smoothly
-    centerCameraOn(newIndex);
     saveState();
+    // compute target positions
+    const left = nx * TILE_W + TILE_W / 2 - 23;
+    const top = ny * TILE_H + TILE_H / 2 - 23;
+    // cancel any ongoing player animation
+    if (_playerAnim) cancelAnimationFrame(_playerAnim);
+    // tween the player's left/top with two parallel tweens
+    const p1 = tween({ from: parseFloat(playerEl.style.left || 0), to: left, duration: 220, onUpdate: v => playerEl.style.left = v + 'px' });
+    const p2 = tween({ from: parseFloat(playerEl.style.top || 0), to: top, duration: 220, onUpdate: v => playerEl.style.top = v + 'px' });
+    // stepping visual
+    playerEl.classList.add('stepping');
+    Promise.all([p1, p2]).then(() => {
+      playerEl.classList.remove('stepping');
+      // center camera after movement completes
+      centerCameraOn(newIndex);
+      // if player moved onto NPC, auto-open dialog when quest available and not yet accepted
+      if (state.playerPosIndex === state.questNpcIndex && state.questAvailable && !state.questAccepted) {
+        showNpcDialog();
+      }
+    });
   }
 
   function interactWithTile(index) {
@@ -442,20 +573,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Deliver water logic
   if (deliverBtn) {
     deliverBtn.addEventListener('click', () => {
-      // If player is at NPC and a quest is available, complete the quest
-      if (state.playerPosIndex === state.questNpcIndex && state.questAvailable) {
-        // Quest reward
-        const questWater = 20;
-        const questGold = 50;
-        state.waterDelivered += questWater;
-        state.funds += questGold;
-        state.questAvailable = false;
-        updateHUD();
-        saveState();
-        renderNpc();
-        statusTextEl.textContent = `Quest complete! You delivered ${questWater} aid and earned ${questGold} gold.`;
-        checkAchievements();
-        return;
+      // If player is at NPC
+      if (state.playerPosIndex === state.questNpcIndex) {
+        // If quest available but not accepted, open dialog
+        if (state.questAvailable && !state.questAccepted) {
+          showNpcDialog();
+          return;
+        }
+        // If quest accepted and available, complete it
+        if (state.questAvailable && state.questAccepted) {
+          const questWater = 20;
+          const questGold = 50;
+          state.waterDelivered += questWater;
+          state.funds += questGold;
+          state.questAvailable = false;
+          state.questAccepted = false;
+          updateHUD();
+          saveState();
+          renderNpc();
+          statusTextEl.textContent = `Quest complete! You delivered ${questWater} aid and earned ${questGold} gold.`;
+          checkAchievements();
+          return;
+        }
       }
 
       // Otherwise perform a normal delivery from placed items

@@ -146,6 +146,20 @@
         </footer>
     <!-- loader overlays are provided by the simple spinner in `#simpleLoader` -->
 
-    <script src="script.js"></script>
+        <!-- NPC Quest Dialog (hidden by default) -->
+        <div id="npcDialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="npcDialogTitle">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <h3 id="npcDialogTitle">Quest Offer</h3>
+                <p id="npcDialogText">A villager needs help collecting supplies. Will you accept?</p>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+                    <button id="npcDeclineBtn" class="btn">Decline</button>
+                    <button id="npcAcceptBtn" class="btn primary">Accept Quest</button>
+                </div>
+                <button id="npcCloseBtn" class="btn" style="position:absolute;top:8px;right:8px;">Close</button>
+            </div>
+        </div>
+
+        <script src="script.js"></script>
 </body>
 </html>
