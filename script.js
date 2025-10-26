@@ -705,19 +705,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Screen transitions
-  startBtn.addEventListener('click', () => {
-    // Ask for confirmation before resetting progress
-    showConfirmReset().then(({ confirmed, wipe }) => {
-      if (!confirmed) return;
-      showLoading('Restarting...', 700).then(() => {
-        resetGame(!!wipe);
-        screen1.classList.add('hidden');
-        screen2.classList.remove('hidden');
-        try { hideLoading(); } catch (e) {}
-        statusTextEl.textContent = 'Quest restarted. Player respawned.';
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      // Ask for confirmation before resetting progress
+      showConfirmReset().then(({ confirmed, wipe }) => {
+        if (!confirmed) return;
+        showLoading('Restarting...', 700).then(() => {
+          resetGame(!!wipe);
+          screen1.classList.add('hidden');
+          screen2.classList.remove('hidden');
+          try { hideLoading(); } catch (e) {}
+          statusTextEl.textContent = 'Quest restarted. Player respawned.';
+        });
       });
     });
-  });
+  }
   // startBtn handler attached
 
   // Character creator wiring
