@@ -17,6 +17,17 @@ Secondary Colors:
    Focused on desktop (second screen) but includes a small-screen fallback
 */
 
+/* Import a decorative 'middle ages' heading font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
+
+:root {
+	/* water:charity brand colors */
+	--brand-yellow: #FFC907;
+	--brand-blue: #2E9DF7;
+	--brand-lightblue: #8BD1CB;
+	--brand-green: #4FCB53;
+	--brand-muted: #f3f7fb;
+}
 /* Basic reset */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
 body { background: #f6efe6; color: #1f2937; padding: 20px; }
@@ -28,7 +39,13 @@ body { background: #f6efe6; color: #1f2937; padding: 20px; }
 .app-screen { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 .screen-center { min-height: 70vh; display: flex; align-items: center; justify-content: center; }
 .app-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.app-header h2 { font-size: 1.2rem; margin-left: 8px; }
+.app-header h2 { font-size: 1.2rem; margin-left: 8px; color: var(--brand-blue); }
+
+/* Use the medieval font for headings and brand it to look like a tavern sign */
+h1, h2, h3, .card h3 { font-family: 'Uncial Antiqua', Georgia, serif; letter-spacing: 0.6px; }
+
+/* Slight decorative treatment for intro title */
+.intro-card h2 { font-size: 1.6rem; color: var(--brand-blue); text-shadow: 0 1px 0 rgba(0,0,0,0.03); }
 
 .app-main { display: grid; grid-template-columns: 220px 1fr 300px; gap: 16px; align-items: start; }
 
@@ -39,8 +56,8 @@ body { background: #f6efe6; color: #1f2937; padding: 20px; }
 /* Buttons */
 .btn { border: 1px solid #d1d5db; background: white; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
 .btn:hover { background: #f3f4f6; }
-.btn.primary { background: #0ea5a4; color: white; border-color: #0ea5a4; }
-.btn.primary:hover { background: #089995; color: white; }
+.btn.primary { background: var(--brand-blue); color: white; border-color: var(--brand-blue); box-shadow: 0 6px 14px rgba(46,157,247,0.12); }
+.btn.primary:hover { background: color-mix(in srgb, var(--brand-blue) 85%, black 15%); }
 
 /* Intro card */
 .intro-card { width: 420px; text-align: center; }
@@ -187,8 +204,8 @@ body { background: #f6efe6; color: #1f2937; padding: 20px; }
 	transition: opacity 180ms ease, transform 180ms ease;
 }
 .inline-indicator:not(.hidden) { opacity: 1; transform: translateY(0); }
-.inline-spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #e6eef6; border-top-color: var(--indicator-accent); animation: spin 700ms linear infinite; }
-.inline-pct { font-weight:700; color:var(--indicator-accent); margin-left:6px; }
+.inline-spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #e6eef6; border-top-color: var(--brand-yellow); animation: spin 700ms linear infinite; }
+.inline-pct { font-weight:700; color:var(--brand-yellow); margin-left:6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width:480px) {
@@ -198,14 +215,14 @@ body { background: #f6efe6; color: #1f2937; padding: 20px; }
 
 	/* Jerrycan decorative styles */
 	.jerry-svg { display:inline-block; vertical-align:middle; pointer-events:none; margin-right:6px; }
-	.jerry-svg #jerryWater { shape-rendering: crispEdges; }
+	.jerry-svg #jerryWater { shape-rendering: crispEdges; fill: var(--brand-blue); }
 
 	/* Character creator styles */
 	.avatar-option { background: white; border: 1px solid #eef2f7; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 20px; }
 	.avatar-option.selected { box-shadow: 0 0 0 2px rgba(14,165,164,0.14); }
 
 	/* Player avatar preview in HUD */
-	.player-avatar { display:inline-block; width:28px; height:28px; line-height:28px; text-align:center; border-radius:6px; background:white; border:1px solid #eef2f7; margin-right:8px; font-size:18px; }
+	.player-avatar { display:inline-block; width:28px; height:28px; line-height:28px; text-align:center; border-radius:6px; background:var(--brand-yellow); border:1px solid rgba(0,0,0,0.06); margin-right:8px; font-size:18px; color:#17324d; }
 
 
 
