@@ -272,7 +272,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fundsEl.textContent = state.funds;
     waterEl.textContent = state.waterDelivered;
     if (playerNameEl) playerNameEl.textContent = state.playerName || 'Player 1';
-    if (playerAvatarEl) playerAvatarEl.textContent = state.avatar || '';
+    if (playerAvatarEl) {
+      playerAvatarEl.textContent = state.avatar || '';
+      playerAvatarEl.classList.toggle('has-avatar', !!state.avatar);
+    }
   }
 
   function renderShop() {
@@ -363,7 +366,9 @@ document.addEventListener('DOMContentLoaded', () => {
   playerEl.style.left = `${startLeft}px`;
   playerEl.style.top = `${startTop}px`;
   cameraX = 0; cameraY = 0;
-  centerCameraOn(state.playerPosIndex, /*animate=*/false);
+    centerCameraOn(state.playerPosIndex, /*animate=*/false);
+    // ensure background parallax starts in a neutral position
+    try { updateParallax(cameraX, cameraY); } catch (e) {}
 
     // Render NPC entity
     renderNpc();
@@ -500,6 +505,20 @@ document.addEventListener('DOMContentLoaded', () => {
     animateCameraTo(tx, ty);
   }
 
+  // Subtle parallax: adjust map background-position based on camera position
+  function updateParallax(cx, cy) {
+    if (!mapGridEl || !worldInner) return;
+    const maxPanX = Math.max(1, worldInner.clientWidth - mapGridEl.clientWidth);
+    const maxPanY = Math.max(1, worldInner.clientHeight - mapGridEl.clientHeight);
+    const parallaxX = 6; // percent max horizontal shift
+    const parallaxY = 3; // percent max vertical shift
+    const px = (cx / maxPanX) * parallaxX;
+    const py = (cy / maxPanY) * parallaxY;
+    const bgX = 50 - px; // center (50%) +/- small percent
+    const bgY = 50 - py;
+    mapGridEl.style.backgroundPosition = `${bgX}% ${bgY}%`;
+  }
+
   function animateCameraTo(targetX, targetY, duration = 320) {
     if (!_cameraAnim && typeof worldInner.style.transform === 'string') {
       // parse current translate
@@ -524,6 +543,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const curY = startY + (targetY - startY) * easeT;
         cameraX = curX; cameraY = curY;
         worldInner.style.transform = `translate(${-curX}px, ${-curY}px)`;
+        // update parallax background to move subtly with camera
+        try { updateParallax(cameraX, cameraY); } catch (e) { /* ignore in older browsers */ }
         if (t < 1) {
           _cameraAnim = requestAnimationFrame(step);
         } else {
