@@ -800,9 +800,11 @@ document.addEventListener('DOMContentLoaded', () => {
       interactWithTile(newIndex);
       return;
     }
-    // update state immediately so other logic can read it
-    state.playerPosIndex = newIndex;
-    saveState();
+  // update state immediately so other logic can read it
+  state.playerPosIndex = newIndex;
+  saveState();
+  // center camera immediately so the map follows the player while they move
+  try { centerCameraOn(newIndex); } catch (e) {}
     // compute target positions
     const left = nx * TILE_W + TILE_W / 2 - 23;
     const top = ny * TILE_H + TILE_H / 2 - 23;
