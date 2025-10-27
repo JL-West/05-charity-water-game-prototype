@@ -276,6 +276,10 @@ h1, h2, h3, .card h3 { font-family: 'Uncial Antiqua', Georgia, serif; letter-spa
 	.now-playing { font-family: 'Uncial Antiqua', Georgia, serif; font-size: 0.9rem; color: #fff8e6; background: rgba(10,20,30,0.38); padding: 6px 10px; border-radius: 8px; box-shadow: 0 6px 18px rgba(2,6,23,0.14); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.now-playing.hidden { display:none; }
 
+	/* Medieval-styled small buttons for music controls */
+	.medieval-btn { font-family: 'Uncial Antiqua', Georgia, serif; font-size: 0.85rem; padding: 6px 8px; background: linear-gradient(180deg,#fffaf0,#fff6e6); border-radius:6px; border:1px solid rgba(0,0,0,0.06); }
+	.medieval-btn:hover { box-shadow: 0 8px 20px rgba(2,6,23,0.12); }
+
 
 
 /* Small screens fallback (we'll focus on desktop but keep it usable) */

@@ -265,6 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
     play(name) {
       if (this.muted) return;
       try { this.init(); } catch (e) { return; }
+      // Some browsers suspend the AudioContext until a user gesture; attempt to resume so short SFX still play
+      try { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {}); } catch (e) {}
       if (!this.ctx) return;
       // simple synth effects for common events
       const now = this.ctx.currentTime;
@@ -725,7 +727,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewW = mapGridEl.clientWidth;
     const viewH = mapGridEl.clientHeight;
     const px = index % MAP_COLS;
-    const py = Math.floor(index / MAP_ROWS);
+    // row calculation should divide by number of columns (MAP_COLS)
+    const py = Math.floor(index / MAP_COLS);
     const playerCenterX = px * TILE_W + TILE_W / 2;
     const playerCenterY = py * TILE_H + TILE_H / 2;
     const tx = Math.max(0, Math.min(playerCenterX - viewW / 2, worldInner.clientWidth - viewW));
@@ -1108,6 +1111,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Sound controls UI
   const soundToggleBtn = document.getElementById('soundToggle');
   const soundVolumeEl = document.getElementById('soundVolume');
+  const enableSoundBtn = document.getElementById('enableSoundBtn');
+  const musicToggleBtn = document.getElementById('musicToggleBtn');
   // initialize UI from saved settings
   try {
     if (soundVolumeEl) soundVolumeEl.value = String(sound.volume);
@@ -1140,6 +1145,46 @@ document.addEventListener('DOMContentLoaded', () => {
         // if muted, pause music playback to respect user's mute choice
         try { if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo(); } catch (e) {}
       }
+    });
+  }
+  // Enable sound explicit CTA (helps resume AudioContext on restrictive browsers)
+  if (enableSoundBtn) {
+    enableSoundBtn.addEventListener('click', () => {
+      try { sound.init(); } catch (e) {}
+      try { if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume(); } catch (e) {}
+      // create YT player but don't auto-play until user hits music toggle
+      createYtPlayer().then(() => {
+        enableSoundBtn.classList.add('hidden');
+        try { enableSoundBtn.setAttribute('aria-hidden', 'true'); } catch (e) {}
+      }).catch(() => { enableSoundBtn.classList.add('hidden'); });
+    });
+  }
+  // Music play/pause (medieval labels)
+  let musicPlaying = false;
+  if (musicToggleBtn) {
+    musicToggleBtn.addEventListener('click', () => {
+      // ensure player exists and AudioContext is resumed
+      try { sound.init(); if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume(); } catch (e) {}
+      createYtPlayer().then(() => {
+        try {
+          const state = ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState();
+          // YT player states: 1 = playing
+          if (state === YT && typeof YT.PlayerState !== 'undefined' && state === YT.PlayerState.PLAYING) {
+            // pause
+            try { ytPlayer.pauseVideo(); } catch (e) {}
+            musicPlaying = false;
+            musicToggleBtn.textContent = 'Let Music Play';
+          } else {
+            // start playing (use playNextYt to choose track)
+            try { playNextYt(); } catch (e) { try { ytPlayer.playVideo(); } catch (e) {} }
+            musicPlaying = true;
+            musicToggleBtn.textContent = 'Still the Minstrels';
+          }
+        } catch (e) {
+          // fallback: try play/pause methods
+          try { if (ytPlayer && typeof ytPlayer.playVideo === 'function') { playNextYt(); musicPlaying = true; musicToggleBtn.textContent = 'Still the Minstrels'; } } catch (err) {}
+        }
+      }).catch(() => {});
     });
   }
   if (soundVolumeEl) {
