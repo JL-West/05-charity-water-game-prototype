@@ -151,7 +151,7 @@ h1, h2, h3, .card h3 { font-family: 'Uncial Antiqua', Georgia, serif; letter-spa
 .game-area.card { position: relative; overflow: visible; }
 .game-area.card::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(255,255,255,0.0) 40%, rgba(8,16,30,0.08) 100%); border-radius: 8px; }
 
-/* Character creator: bedchamber theme (medieval). Place your image at img/medieval-room.jpg */
+/* Character creator: bedchamber theme (medieval). Place your image at https://images.squarespace-cdn.com/content/66311e7ab025c412c52014f4/1726165184490-B6MH55YJO20ZWU1W26DM/7.jpg?format=1500w&content-type=image%2Fjpeg */
 #screen-3 { background-image: linear-gradient(rgba(6,9,12,0.24), rgba(6,9,12,0.12)), url('img/medieval-room.jpg'); background-size: cover; background-position: center; }
 #screen-3 .intro-card { background: linear-gradient(180deg, rgba(255,250,240,0.95), rgba(255,250,240,0.88)); box-shadow: 0 8px 30px rgba(2,6,23,0.18); }
 
