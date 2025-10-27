@@ -1152,6 +1152,9 @@ document.addEventListener('DOMContentLoaded', () => {
     enableSoundBtn.addEventListener('click', () => {
       try { sound.init(); } catch (e) {}
       try { if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume(); } catch (e) {}
+      // unmute SFX by default when user explicitly enables sound
+      try { sound.setMuted(false); } catch (e) {}
+      try { if (soundToggleBtn) { soundToggleBtn.setAttribute('aria-pressed', String(sound.muted)); soundToggleBtn.textContent = sound.muted ? '🔈' : '🔊'; } } catch (e) {}
       // create YT player but don't auto-play until user hits music toggle
       createYtPlayer().then(() => {
         enableSoundBtn.classList.add('hidden');
@@ -1167,9 +1170,8 @@ document.addEventListener('DOMContentLoaded', () => {
       try { sound.init(); if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume(); } catch (e) {}
       createYtPlayer().then(() => {
         try {
-          const state = ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState();
-          // YT player states: 1 = playing
-          if (state === YT && typeof YT.PlayerState !== 'undefined' && state === YT.PlayerState.PLAYING) {
+          const playerState = (ytPlayer && typeof ytPlayer.getPlayerState === 'function') ? ytPlayer.getPlayerState() : null;
+          if (typeof YT !== 'undefined' && playerState === YT.PlayerState.PLAYING) {
             // pause
             try { ytPlayer.pauseVideo(); } catch (e) {}
             musicPlaying = false;
