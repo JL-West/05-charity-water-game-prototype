@@ -89,10 +89,11 @@
             </div>
             <div class="right">
                 <button id="helpBtn" class="btn">Help</button>
-                <!-- Sound controls: mute toggle and volume slider -->
+                <!-- Sound controls: mute toggle, volume slider and now-playing -->
                 <div style="display:inline-flex;align-items:center;gap:8px;margin-left:8px;">
                     <button id="soundToggle" class="btn" aria-pressed="false">🔊</button>
                     <input id="soundVolume" type="range" min="0" max="1" step="0.05" value="0.8" style="width:98px;" aria-label="Sound volume" />
+                    <div id="nowPlaying" class="now-playing" aria-live="polite" style="display:none;"></div>
                 </div>
             </div>
         </header>
@@ -179,5 +180,7 @@
             </div>
 
         <script src="script.js"></script>
+    <!-- Hidden container for YouTube music player (controlled via JS) -->
+    <div id="yt-music-container" style="display:none;width:0;height:0;overflow:hidden;" aria-hidden="true"></div>
 </body>
 </html>

@@ -272,6 +272,10 @@ h1, h2, h3, .card h3 { font-family: 'Uncial Antiqua', Georgia, serif; letter-spa
 	.player-avatar { display:inline-block; width:28px; height:28px; line-height:28px; text-align:center; border-radius:6px; background:var(--brand-yellow); border:1px solid rgba(0,0,0,0.06); margin-right:8px; font-size:18px; color:#17324d; box-shadow: 0 2px 8px rgba(14,165,164,0.06); transition: box-shadow 180ms ease, transform 180ms ease; }
 	.player-avatar.has-avatar { box-shadow: 0 10px 28px rgba(255,201,7,0.12); transform: translateY(-2px); }
 
+	/* Now playing title (uses the medieval Uncial font for thematic styling) */
+	.now-playing { font-family: 'Uncial Antiqua', Georgia, serif; font-size: 0.9rem; color: #fff8e6; background: rgba(10,20,30,0.38); padding: 6px 10px; border-radius: 8px; box-shadow: 0 6px 18px rgba(2,6,23,0.14); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.now-playing.hidden { display:none; }
+
 
 
 /* Small screens fallback (we'll focus on desktop but keep it usable) */

@@ -331,6 +331,125 @@ document.addEventListener('DOMContentLoaded', () => {
   // restore sound settings from last session
   sound.restore();
 
+  // --------------------------
+  // YouTube background music (shuffle playlist)
+  // --------------------------
+  // List of YouTube URLs provided by the user; we'll extract IDs and shuffle play them
+  const ytUrls = [
+    'https://youtu.be/V7jOobdrdGo',
+    'https://youtu.be/u9eSnSBP1Po',
+    'https://youtu.be/Nx-x_1lIXh4',
+    'https://youtu.be/cRIfsFefatg',
+    'https://youtu.be/X8u15Q99HUU',
+    'https://youtu.be/GZU-rn8ucSo'
+  ];
+  const ytQueue = ytUrls.map(u => extractYouTubeId(u)).filter(Boolean);
+  let ytPlayer = null;
+  let ytApiReady = false;
+  let ytCreating = false;
+
+  function extractYouTubeId(url) {
+    if (!url) return null;
+    // common patterns: youtu.be/ID, v=ID, /embed/ID
+    const m = url.match(/(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+    return m ? m[1] : null;
+  }
+
+  function loadYouTubeApi() {
+    return new Promise(resolve => {
+      if (window.YT && window.YT.Player) { ytApiReady = true; return resolve(); }
+      if (document.getElementById('youtube-iframe-api')) { // already loading
+        const check = setInterval(() => { if (window.YT && window.YT.Player) { clearInterval(check); ytApiReady = true; resolve(); } }, 200);
+        return;
+      }
+      const tag = document.createElement('script');
+      tag.id = 'youtube-iframe-api';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+      window.onYouTubeIframeAPIReady = function() { ytApiReady = true; resolve(); };
+    });
+  }
+
+  function createYtPlayer() {
+    if (ytPlayer || ytCreating) return Promise.resolve();
+    ytCreating = true;
+    return loadYouTubeApi().then(() => new Promise(resolve => {
+      const container = document.getElementById('yt-music-container');
+      // create a hidden player (0x0 dimensions) so audio plays but UI is invisible
+      ytPlayer = new YT.Player(container, {
+        height: '0', width: '0',
+        videoId: ytQueue.length ? ytQueue[0] : undefined,
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          rel: 0,
+          modestbranding: 1,
+          disablekb: 1
+        },
+        events: {
+          onReady: (e) => {
+            try { if (typeof e.target.setVolume === 'function') e.target.setVolume(Math.round(sound.volume * 100)); } catch (e) {}
+            // update now-playing with initial video title if available
+            try { updateNowPlaying(e.target.getVideoData && e.target.getVideoData().title); } catch (err) {}
+            resolve();
+          },
+          onStateChange: (e) => {
+            // update title when the player actually starts playing
+            if (e.data === YT.PlayerState.PLAYING) {
+              try { updateNowPlaying(ytPlayer.getVideoData && ytPlayer.getVideoData().title); } catch (err) {}
+            }
+            // when a track ends, start another random track
+            if (e.data === YT.PlayerState.ENDED) {
+              // small timeout to avoid immediate rapid-fire
+              setTimeout(() => { playNextYt(); }, 220);
+            }
+          }
+        }
+      });
+    })).finally(() => { ytCreating = false; });
+  }
+
+  function playNextYt() {
+    if (!ytPlayer || !ytQueue.length) return;
+    try {
+      const curId = ytPlayer.getVideoData && ytPlayer.getVideoData().video_id;
+      // pick a random different index
+      let idx = Math.floor(Math.random() * ytQueue.length);
+      if (ytQueue.length > 1) {
+        const maxTries = 6; let tries = 0;
+        while (ytQueue[idx] === curId && tries++ < maxTries) idx = Math.floor(Math.random() * ytQueue.length);
+      }
+      const nextId = ytQueue[idx];
+      if (!nextId) return;
+      // load and play
+      if (typeof ytPlayer.loadVideoById === 'function') {
+        ytPlayer.loadVideoById({ videoId: nextId, startSeconds: 0 });
+        try { ytPlayer.playVideo(); } catch (e) {}
+      } else if (typeof ytPlayer.cueVideoById === 'function') {
+        ytPlayer.cueVideoById(nextId);
+        try { ytPlayer.playVideo(); } catch (e) {}
+      }
+      // update now-playing title (will be refined when playing state is reached)
+      try { updateNowPlaying(ytPlayer && ytPlayer.getVideoData && ytPlayer.getVideoData().title); } catch (e) {}
+    } catch (e) {
+      // ignore YouTube API errors
+    }
+  }
+
+  // Update the now-playing UI element (uses medieval font via CSS)
+  const nowPlayingEl = document.getElementById('nowPlaying');
+  function updateNowPlaying(title) {
+    if (!nowPlayingEl) return;
+    if (!title) {
+      nowPlayingEl.style.display = 'none';
+      nowPlayingEl.textContent = '';
+      return;
+    }
+    nowPlayingEl.textContent = title;
+    nowPlayingEl.style.display = 'inline-block';
+  }
+
+
 
   // Reset game progress. If wipeCharacter is true, also remove saved name/avatar.
   // Respawn player to default and play a small respawn animation.
@@ -1000,15 +1119,32 @@ document.addEventListener('DOMContentLoaded', () => {
     soundToggleBtn.addEventListener('click', () => {
       // resume AudioContext on first gesture
       try { if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume(); } catch (e) {}
-      sound.setMuted(!sound.muted);
+      const willMute = !sound.muted;
+      sound.setMuted(willMute);
       soundToggleBtn.setAttribute('aria-pressed', String(sound.muted));
       soundToggleBtn.textContent = sound.muted ? '🔈' : '🔊';
+      // Initialize YouTube player on first unmute and start music playback
+      if (!willMute) {
+        // ensure we have a player and play a shuffled track
+        createYtPlayer().then(() => {
+          try {
+            // set volume on player
+            if (ytPlayer && typeof ytPlayer.setVolume === 'function') ytPlayer.setVolume(Math.round(sound.volume * 100));
+            // if player is not already playing, start a random track
+            try { playNextYt(); } catch (e) {}
+          } catch (e) {}
+        }).catch(() => {});
+      } else {
+        // if muted, pause music playback to respect user's mute choice
+        try { if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') ytPlayer.pauseVideo(); } catch (e) {}
+      }
     });
   }
   if (soundVolumeEl) {
     soundVolumeEl.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
       sound.setVolume(v);
+      try { if (ytPlayer && typeof ytPlayer.setVolume === 'function') ytPlayer.setVolume(Math.round(v * 100)); } catch (e) {}
     });
   }
   if (helpBtn) {
