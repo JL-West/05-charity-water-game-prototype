@@ -89,6 +89,11 @@
             </div>
             <div class="right">
                 <button id="helpBtn" class="btn">Help</button>
+                <!-- Sound controls: mute toggle and volume slider -->
+                <div style="display:inline-flex;align-items:center;gap:8px;margin-left:8px;">
+                    <button id="soundToggle" class="btn" aria-pressed="false">🔊</button>
+                    <input id="soundVolume" type="range" min="0" max="1" step="0.05" value="0.8" style="width:98px;" aria-label="Sound volume" />
+                </div>
             </div>
         </header>
 

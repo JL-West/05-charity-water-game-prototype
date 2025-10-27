@@ -222,6 +222,116 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --------------------------
+  // Sound manager (WebAudio + synth fallback)
+  // --------------------------
+  const soundKey = 'charity-sound-settings';
+  const sound = {
+    ctx: null,
+    master: null,
+    volume: 0.8,
+    muted: false,
+    inited: false,
+    init() {
+      if (this.inited) return;
+      try {
+        const C = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new C();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = this.muted ? 0 : this.volume;
+        this.master.connect(this.ctx.destination);
+        this.inited = true;
+      } catch (e) {
+        console.warn('WebAudio not available', e);
+      }
+    },
+    setVolume(v) {
+      this.volume = Math.max(0, Math.min(1, Number(v) || 0));
+      if (this.master) this.master.gain.value = this.muted ? 0 : this.volume;
+      this.save();
+    },
+    setMuted(m) {
+      this.muted = !!m;
+      if (this.master) this.master.gain.value = this.muted ? 0 : this.volume;
+      this.save();
+    },
+    save() { try { localStorage.setItem(soundKey, JSON.stringify({ muted: this.muted, volume: this.volume })); } catch (e) {} },
+    restore() {
+      try {
+        const s = JSON.parse(localStorage.getItem(soundKey) || 'null');
+        if (s) { this.muted = !!s.muted; this.volume = typeof s.volume === 'number' ? s.volume : this.volume; }
+      } catch (e) {}
+    },
+    play(name) {
+      if (this.muted) return;
+      try { this.init(); } catch (e) { return; }
+      if (!this.ctx) return;
+      // simple synth effects for common events
+      const now = this.ctx.currentTime;
+      if (name === 'move') {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(880, now);
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(0.12 * this.volume, now + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        o.connect(g); g.connect(this.master);
+        o.start(now); o.stop(now + 0.22);
+        return;
+      }
+      if (name === 'place') {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'triangle'; o.frequency.setValueAtTime(520, now);
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(0.16 * this.volume, now + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        o.connect(g); g.connect(this.master);
+        o.start(now); o.stop(now + 0.3);
+        return;
+      }
+      if (name === 'deliver') {
+        // simple arpeggiated chime
+        const freqs = [660, 880, 990];
+        freqs.forEach((f, i) => {
+          const o = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          const t = now + i * 0.06;
+          o.type = 'sine'; o.frequency.setValueAtTime(f, t);
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.18 * this.volume, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
+          o.connect(g); g.connect(this.master);
+          o.start(t); o.stop(t + 0.36);
+        });
+        return;
+      }
+      if (name === 'questComplete') {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(440, now);
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(0.22 * this.volume, now + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        o.connect(g); g.connect(this.master);
+        o.start(now); o.stop(now + 0.56);
+        return;
+      }
+      // fallback click sound
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'square'; o.frequency.setValueAtTime(880, now);
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.08 * this.volume, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      o.connect(g); g.connect(this.master);
+      o.start(now); o.stop(now + 0.14);
+    }
+  };
+  // restore sound settings from last session
+  sound.restore();
+
+
   // Reset game progress. If wipeCharacter is true, also remove saved name/avatar.
   // Respawn player to default and play a small respawn animation.
   function resetGame(wipeCharacter = false) {
@@ -577,8 +687,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // compute target positions
     const left = nx * TILE_W + TILE_W / 2 - 23;
     const top = ny * TILE_H + TILE_H / 2 - 23;
-    // cancel any ongoing player animation
+  // cancel any ongoing player animation
     if (_playerAnim) cancelAnimationFrame(_playerAnim);
+  // play footstep / move sound
+  try { sound.play('move'); } catch (e) {}
     // tween the player's left/top with two parallel tweens
     const p1 = tween({ from: parseFloat(playerEl.style.left || 0), to: left, duration: 220, onUpdate: v => playerEl.style.left = v + 'px' });
     const p2 = tween({ from: parseFloat(playerEl.style.top || 0), to: top, duration: 220, onUpdate: v => playerEl.style.top = v + 'px' });
@@ -604,7 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tile) {
       tile.style.transition = 'box-shadow 180ms ease';
       const old = tile.style.boxShadow;
-      tile.style.boxShadow = '0 0 0 4px rgba(244,180,0,0.18)';
+      tile.style.boxShadow = '0 0 0 4px rgba(200,179,64,0.18)';
       setTimeout(() => { if (tile) tile.style.boxShadow = old; }, 420);
     }
   }
@@ -655,6 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateHUD();
       saveState();
   statusTextEl.textContent = `Removed ${existing.item.name} from this plot. Refunded $${refund}.`;
+      try { sound.play('place'); } catch (e) {}
       return;
     }
 
@@ -671,6 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHUD();
     saveState();
   statusTextEl.textContent = `${state.selectedTool.name} placed on Plot ${index + 1}. Click again to remove (partial refund).`;
+  try { sound.play('place'); } catch (e) {}
   }
 
   // Deliver water logic
@@ -696,6 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
           renderNpc();
           statusTextEl.textContent = `Quest complete! You delivered ${questWater} aid and earned ${questGold} gold.`;
           checkAchievements();
+          try { sound.play('questComplete'); } catch (e) {}
           return;
         }
       }
@@ -713,6 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveState();
       statusTextEl.textContent = `Delivered ${gained} supplies to the hamlet. Earned ${reward} gold.`;
       checkAchievements();
+      try { sound.play('deliver'); } catch (e) {}
     });
   }
 
@@ -814,6 +930,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateInventory();
         updateHUD();
         statusTextEl.textContent = 'Welcome, ' + state.playerName + '! Select an item from the shop.';
+        // play a friendly chime when character is created
+        try { sound.play('place'); } catch (e) {}
       });
     });
   }
@@ -858,6 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
           screen2.classList.remove('hidden');
           try { hideLoading(); } catch (e) {}
           statusTextEl.textContent = 'Quest restarted. Player respawned.';
+          try { sound.play('deliver'); } catch (e) {}
         });
       });
     });
@@ -865,6 +984,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Help button exists in markup; attach listener if present
   const helpBtn = document.getElementById('helpBtn');
+  // Sound controls UI
+  const soundToggleBtn = document.getElementById('soundToggle');
+  const soundVolumeEl = document.getElementById('soundVolume');
+  // initialize UI from saved settings
+  try {
+    if (soundVolumeEl) soundVolumeEl.value = String(sound.volume);
+    if (soundToggleBtn) {
+      soundToggleBtn.setAttribute('aria-pressed', String(sound.muted ? 'true' : 'false'));
+      soundToggleBtn.textContent = sound.muted ? '🔈' : '🔊';
+    }
+  } catch (e) {}
+
+  if (soundToggleBtn) {
+    soundToggleBtn.addEventListener('click', () => {
+      // resume AudioContext on first gesture
+      try { if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume(); } catch (e) {}
+      sound.setMuted(!sound.muted);
+      soundToggleBtn.setAttribute('aria-pressed', String(sound.muted));
+      soundToggleBtn.textContent = sound.muted ? '🔈' : '🔊';
+    });
+  }
+  if (soundVolumeEl) {
+    soundVolumeEl.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      sound.setVolume(v);
+    });
+  }
   if (helpBtn) {
     helpBtn.addEventListener('click', () => {
       alert('Help:\n1) Select an item from the shop.\n2) Click a plot on the map to place it.\n3) Press Deliver Supplies to deliver resources and earn money.');

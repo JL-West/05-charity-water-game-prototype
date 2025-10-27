@@ -100,7 +100,7 @@ h1, h2, h3, .card h3 { font-family: 'Uncial Antiqua', Georgia, serif; letter-spa
 	box-shadow: 0 6px 14px rgba(12, 18, 31, 0.06);
 	transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
-.map-tile:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(12,18,31,0.12); }
+.map-tile:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(200,179,64,0.18); }
 .world-inner .map-tile:nth-child(odd) { background: linear-gradient(180deg,#c8b340 0%, #c8b340 40%, #c8b340 100%); }
 
 .map-tile .tile-label { color: #15324a; }
