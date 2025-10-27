@@ -245,6 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('WebAudio not available', e);
       }
     },
+      // HTMLAudio fallback (tiny silent WAV) to unlock audio on strict browsers
+      audioFallback: (function(){
+        try {
+          const a = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=');
+          a.preload = 'auto';
+          return a;
+        } catch(e) { return null; }
+      })(),
     setVolume(v) {
       this.volume = Math.max(0, Math.min(1, Number(v) || 0));
       if (this.master) this.master.gain.value = this.muted ? 0 : this.volume;
@@ -267,7 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
       try { this.init(); } catch (e) { return; }
       // Some browsers suspend the AudioContext until a user gesture; attempt to resume so short SFX still play
       try { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {}); } catch (e) {}
-      if (!this.ctx) return;
+      // If there is no AudioContext (older browsers) or resume didn't succeed, try HTMLAudio fallback
+      if (!this.ctx) {
+        if (this.audioFallback) { try { this.audioFallback.currentTime = 0; this.audioFallback.play().catch(()=>{}); } catch(e){} }
+        return;
+      }
+      if (this.ctx && this.ctx.state !== 'running' && this.audioFallback) {
+        try { this.audioFallback.currentTime = 0; this.audioFallback.play().catch(()=>{}); } catch(e){}
+      }
       // simple synth effects for common events
       const now = this.ctx.currentTime;
       if (name === 'move') {
@@ -396,14 +411,25 @@ document.addEventListener('DOMContentLoaded', () => {
             resolve();
           },
           onStateChange: (e) => {
-            // update title when the player actually starts playing
-            if (e.data === YT.PlayerState.PLAYING) {
-              try { updateNowPlaying(ytPlayer.getVideoData && ytPlayer.getVideoData().title); } catch (err) {}
-            }
-            // when a track ends, start another random track
-            if (e.data === YT.PlayerState.ENDED) {
-              // small timeout to avoid immediate rapid-fire
-              setTimeout(() => { playNextYt(); }, 220);
+            // update title and musicPlaying flag when the player state changes
+            try {
+              if (typeof YT !== 'undefined') {
+                if (e.data === YT.PlayerState.PLAYING) {
+                  musicPlaying = true;
+                  if (musicToggleBtn) musicToggleBtn.textContent = 'Still the Minstrels';
+                  try { updateNowPlaying(ytPlayer.getVideoData && ytPlayer.getVideoData().title); } catch (err) {}
+                } else if (e.data === YT.PlayerState.PAUSED) {
+                  musicPlaying = false;
+                  if (musicToggleBtn) musicToggleBtn.textContent = 'Let Music Play';
+                } else if (e.data === YT.PlayerState.ENDED) {
+                  musicPlaying = false;
+                  if (musicToggleBtn) musicToggleBtn.textContent = 'Let Music Play';
+                  // small timeout to avoid immediate rapid-fire
+                  setTimeout(() => { playNextYt(); }, 220);
+                }
+              }
+            } catch (err) {
+              // ignore
             }
           }
         }
@@ -722,17 +748,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function centerCameraOn(index) {
+  // center the viewport on a tile index. If animate=false, jump immediately.
+  function centerCameraOn(index, animate = true) {
     if (!worldInner || !mapGridEl) return;
     const viewW = mapGridEl.clientWidth;
     const viewH = mapGridEl.clientHeight;
     const px = index % MAP_COLS;
-    // row calculation should divide by number of columns (MAP_COLS)
     const py = Math.floor(index / MAP_COLS);
     const playerCenterX = px * TILE_W + TILE_W / 2;
     const playerCenterY = py * TILE_H + TILE_H / 2;
-    const tx = Math.max(0, Math.min(playerCenterX - viewW / 2, worldInner.clientWidth - viewW));
-    const ty = Math.max(0, Math.min(playerCenterY - viewH / 2, worldInner.clientHeight - viewH));
+    const tx = Math.max(0, Math.min(playerCenterX - viewW / 2, Math.max(0, worldInner.clientWidth - viewW)));
+    const ty = Math.max(0, Math.min(playerCenterY - viewH / 2, Math.max(0, worldInner.clientHeight - viewH)));
+    if (animate === false) {
+      cameraX = tx; cameraY = ty;
+      worldInner.style.transform = `translate(${-tx}px, ${-ty}px)`;
+      try { updateParallax(cameraX, cameraY); } catch (e) {}
+      return;
+    }
     // animate camera using rAF for smooth movement
     animateCameraTo(tx, ty);
   }
@@ -788,6 +820,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Ensure the player element remains within the visible viewport; adjust camera immediately if needed
+  function ensurePlayerInView() {
+    if (!playerEl || !worldInner || !mapGridEl) return;
+    const pRect = playerEl.getBoundingClientRect();
+    const vRect = mapGridEl.getBoundingClientRect();
+    const pad = 8;
+    // horizontal
+    if (pRect.right > vRect.right - pad) {
+      const overflow = pRect.right - (vRect.right - pad);
+      cameraX = Math.min(cameraX + overflow, Math.max(0, worldInner.clientWidth - mapGridEl.clientWidth));
+      worldInner.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+      try { updateParallax(cameraX, cameraY); } catch (e) {}
+    } else if (pRect.left < vRect.left + pad) {
+      const overflow = (vRect.left + pad) - pRect.left;
+      cameraX = Math.max(0, cameraX - overflow);
+      worldInner.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+      try { updateParallax(cameraX, cameraY); } catch (e) {}
+    }
+    // vertical
+    if (pRect.bottom > vRect.bottom - pad) {
+      const overflow = pRect.bottom - (vRect.bottom - pad);
+      cameraY = Math.min(cameraY + overflow, Math.max(0, worldInner.clientHeight - mapGridEl.clientHeight));
+      worldInner.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+      try { updateParallax(cameraX, cameraY); } catch (e) {}
+    } else if (pRect.top < vRect.top + pad) {
+      const overflow = (vRect.top + pad) - pRect.top;
+      cameraY = Math.max(0, cameraY - overflow);
+      worldInner.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+      try { updateParallax(cameraX, cameraY); } catch (e) {}
+    }
+  }
+
   // Move player by grid delta (dx, dy)
   function movePlayer(dx, dy) {
     const idx = state.playerPosIndex;
@@ -806,8 +870,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // update state immediately so other logic can read it
   state.playerPosIndex = newIndex;
   saveState();
-  // center camera immediately so the map follows the player while they move
-  try { centerCameraOn(newIndex); } catch (e) {}
+  // center camera immediately (jump) so the map follows the player while they move
+  try { centerCameraOn(newIndex, /*animate=*/false); } catch (e) {}
     // compute target positions
     const left = nx * TILE_W + TILE_W / 2 - 23;
     const top = ny * TILE_H + TILE_H / 2 - 23;
@@ -824,6 +888,8 @@ document.addEventListener('DOMContentLoaded', () => {
       playerEl.classList.remove('stepping');
       // center camera after movement completes
       centerCameraOn(newIndex);
+      // ensure player is visible (quick guard for edge cases)
+      try { ensurePlayerInView(); } catch (e) {}
       // if player moved onto NPC, auto-open dialog when quest available and not yet accepted
       if (state.playerPosIndex === state.questNpcIndex && state.questAvailable && !state.questAccepted) {
         showNpcDialog();
@@ -1156,6 +1222,9 @@ document.addEventListener('DOMContentLoaded', () => {
       try { sound.setMuted(false); } catch (e) {}
       try { if (soundToggleBtn) { soundToggleBtn.setAttribute('aria-pressed', String(sound.muted)); soundToggleBtn.textContent = sound.muted ? '🔈' : '🔊'; } } catch (e) {}
       // create YT player but don't auto-play until user hits music toggle
+      // Play a tiny fallback audio to ensure browser unlocks audio on this user gesture
+      try { if (sound.audioFallback) { sound.audioFallback.currentTime = 0; sound.audioFallback.play().catch(()=>{}); } } catch (e) {}
+      try { sound.play('place'); } catch (e) {}
       createYtPlayer().then(() => {
         enableSoundBtn.classList.add('hidden');
         try { enableSoundBtn.setAttribute('aria-hidden', 'true'); } catch (e) {}
