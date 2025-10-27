@@ -50,7 +50,7 @@ h1, h2, h3, .card h3 { font-family: 'Uncial Antiqua', Georgia, serif; letter-spa
 .app-main { display: grid; grid-template-columns: 220px 1fr 300px; gap: 16px; align-items: start; }
 
 /* Panels and card */
-.panel, .game-area, .card { background: #0d4104; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(10,10,10,0.06); }
+.panel, .game-area, .card { background: #fbfafa; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(10,10,10,0.06); }
 .card h3 { margin-bottom: 8px; font-size: 1rem; }
 
 /* Buttons */
